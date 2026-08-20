@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Draft & Line Simulator - League of Legends</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="hextech-theme">
+    <div class="background-overlay"></div>
+    
+    <!-- Top Navigation Header -->
+    <header class="hextech-header">
+        <div class="logo-container">
+            <div class="lol-crest">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="logo-text">
+                <h1>SIMULADOR DE LÍNEAS & CAMPEONES</h1>
+                <span class="sub-title">RIOT DATA DRAGON EN VIVO</span>
+            </div>
+        </div>
+
+        <div class="api-status-badge" id="apiStatusBadge">
+            <span class="pulse-dot"></span>
+            <span id="apiStatusText">Cargando Data Dragon API...</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Step Navigation Tabs -->
+        <nav class="stepper-nav">
+            <button class="step-btn active" id="tabStep1" onclick="switchStep(1)">
+                <span class="step-num">1</span>
+                <span class="step-label">Preferencias de Invocadores</span>
+            </button>
+            <button class="step-btn" id="tabStep2" onclick="switchStep(2)">
+                <span class="step-num">2</span>
+                <span class="step-label">Pool de Campeones</span>
+            </button>
+            <button class="step-btn" id="tabStep3" onclick="switchStep(3)">
+                <span class="step-num">3</span>
+                <span class="step-label">Simulación 3 Partidas</span>
+            </button>
+        </nav>
+
+        <!-- Validation Alert Banner -->
+        <div class="validation-banner" id="validationBanner">
+            <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="banner-message" id="validationMessage">
+                Verificando cobertura de líneas para las 3 partidas...
+            </div>
+        </div>
+
+        <!-- STEP 1: SUMMONER LANE SELECTION -->
+        <section class="step-content active" id="step1Content">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-users"></i> Configuración del Equipo de Invocadores</h2>
+                <p>Cada invocador debe elegir <strong>3 líneas preferidas</strong>. El sistema comprobará en tiempo real que las 5 posiciones (TOP, JUNGLA, MID, BOT, SUPPORT) estén cubiertas para garantizar 3 partidas con líneas distintas para cada jugador.</p>
+            </div>
+
+            <div class="summoners-grid" id="summonersGrid">
+                <!-- Dynamic Summoner Cards injected via JS -->
+            </div>
+
+            <div class="action-bar">
+                <button class="hextech-btn secondary" onclick="presetStandardTeam()">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Autocompletar Líneas Equilibradas
+                </button>
+                <button class="hextech-btn primary" id="btnGoToStep2" onclick="validateStep1AndProceed()">
+                    Siguiente: Elegir Campeones <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: CHAMPION SELECTION PER LANE -->
+        <section class="step-content" id="step2Content">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-trophy"></i> Selección de 3 Campeones por Línea</h2>
+                <p>Para cada invocador y sus 3 líneas elegidas, selecciona 3 campeones favoritos de la base de datos oficial de LoL.</p>
+            </div>
+
+            <div class="summoner-champ-tabs" id="summonerChampTabs">
+                <!-- Invocadores sub-navigation injected via JS -->
+            </div>
+
+            <div class="champ-pool-editor" id="champPoolEditor">
+                <!-- Dynamic Champion Selector for active summoner -->
+            </div>
+
+            <div class="action-bar">
+                <button class="hextech-btn secondary" onclick="switchStep(1)">
+                    <i class="fa-solid fa-arrow-left"></i> Volver a Líneas
+                </button>
+                <button class="hextech-btn secondary" onclick="autoFillRandomChampions()">
+                    <i class="fa-solid fa-shuffle"></i> Autocompletar Campeones Meta
+                </button>
+                <button class="hextech-btn primary" id="btnGoToStep3" onclick="validateStep2AndProceed()">
+                    Generar 3 Partidas <i class="fa-solid fa-dice-d20"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 3: MATCHES SIMULATION & DRAFT VISUALIZER -->
+        <section class="step-content" id="step3Content">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-gamepad"></i> Resultado de las 3 Partidas Generadas</h2>
+                <p>Cada jugador compite en una línea diferente en cada partida con su pool de campeones seleccionado.</p>
+            </div>
+
+            <div class="matches-tab-selector">
+                <button class="match-tab-btn active" id="matchTab1" onclick="switchMatchView(1)">
+                    <i class="fa-solid fa-fire"></i> Partida 1
+                </button>
+                <button class="match-tab-btn" id="matchTab2" onclick="switchMatchView(2)">
+                    <i class="fa-solid fa-bolt"></i> Partida 2
+                </button>
+                <button class="match-tab-btn" id="matchTab3" onclick="switchMatchView(3)">
+                    <i class="fa-solid fa-crown"></i> Partida 3
+                </button>
+                <button class="hextech-btn secondary icon-only" onclick="generate3Matches()" title="Regenerar Variación">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+
+            <div class="match-display-container" id="matchDisplayContainer">
+                <!-- Active match team layout injected via JS -->
+            </div>
+
+            <!-- Full 3 Matches Summary Overview Table -->
+            <div class="matches-summary-card">
+                <h3><i class="fa-solid fa-list-check"></i> Resumen de Rotación de las 3 Partidas</h3>
+                <div class="table-responsive">
+                    <table class="hextech-table" id="matchesSummaryTable">
+                        <thead>
+                            <tr>
+                                <th>Invocador</th>
+                                <th>Partida 1 (Línea / Campeón)</th>
+                                <th>Partida 2 (Línea / Campeón)</th>
+                                <th>Partida 3 (Línea / Campeón)</th>
+                                <th>Diversidad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matchesSummaryTbody">
+                            <!-- Table rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="hextech-btn secondary" onclick="switchStep(2)">
+                    <i class="fa-solid fa-arrow-left"></i> Cambiar Campeones
+                </button>
+                <button class="hextech-btn primary" onclick="exportDraftConfig()">
+                    <i class="fa-solid fa-download"></i> Exportar Simulación (JSON)
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- CHAMPION SELECTION MODAL -->
+    <div class="modal-backdrop" id="champPickerModal">
+        <div class="hextech-modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-mask"></i> Seleccionar Campeón para <span id="modalTargetLabel">TOP - Invocador 1</span></h3>
+                <button class="close-modal-btn" onclick="closeChampModal()">&times;</button>
+            </div>
+
+            <div class="modal-filters">
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="champSearchInput" placeholder="Buscar campeón (ej: Ahri, Yasuo, Darius)..." oninput="filterChampions()">
+                </div>
+                <div class="role-filter-pills" id="modalRoleFilters">
+                    <button class="pill active" onclick="setModalRoleFilter('ALL')">Todos</button>
+                    <button class="pill" onclick="setModalRoleFilter('Fighter')">Luchadores</button>
+                    <button class="pill" onclick="setModalRoleFilter('Mage')">Magos</button>
+                    <button class="pill" onclick="setModalRoleFilter('Assassin')">Asesinos</button>
+                    <button class="pill" onclick="setModalRoleFilter('Tank')">Tanques</button>
+                    <button class="pill" onclick="setModalRoleFilter('Marksman')">Tiradores</button>
+                    <button class="pill" onclick="setModalRoleFilter('Support')">Soportes</button>
+                </div>
+            </div>
+
+            <div class="modal-champions-grid" id="modalChampsGrid">
+                <!-- Champions list rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
