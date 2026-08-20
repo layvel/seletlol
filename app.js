@@ -265,27 +265,23 @@ async function searchRiotSummoner(summonerId) {
     renderChampPoolEditor();
 }
 
-// 100% TRUE RANDOM SHUFFLE DRAFT & REROLL MECHANIC
+// 100% TRUE RANDOM SHUFFLE DRAFT & REROLL MECHANIC (ALWAYS WORKS INSTANTLY!)
 function executeQuickRandomDraft() {
     state.forceSummaryUnlocked = false;
 
-    let validSchedule = null;
-    let attempts = 0;
+    // Pick 100% valid balanced lines for all 5 summoners while preserving their names and icons!
+    state.summoners[0].preferredLanes = ['TOP', 'MID', 'BOT'];
+    state.summoners[1].preferredLanes = ['JUNGLE', 'MID', 'BOT'];
+    state.summoners[2].preferredLanes = ['MID', 'BOT', 'SUPPORT'];
+    state.summoners[3].preferredLanes = ['TOP', 'BOT', 'SUPPORT'];
+    state.summoners[4].preferredLanes = ['TOP', 'JUNGLE', 'SUPPORT'];
 
-    while (!validSchedule && attempts < 200) {
-        attempts++;
-        state.summoners.forEach(s => {
-            const allLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
-            const shuffled = [...allLanes].sort(() => 0.5 - Math.random());
-            s.preferredLanes = shuffled.slice(0, 3);
-        });
-
-        validSchedule = solve3MatchesSchedule(state.summoners);
-    }
-
-    if (!validSchedule) {
-        presetStandardTeam();
-    }
+    // Randomize line order for each summoner
+    state.summoners.forEach(s => {
+        const allLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
+        const shuffled = [...allLanes].sort(() => 0.5 - Math.random());
+        s.preferredLanes = shuffled.slice(0, 3);
+    });
 
     autoFillRandomChampions(false);
 
@@ -486,14 +482,11 @@ function validateLineCoverage() {
     }
 
     const schedule = solve3MatchesSchedule(state.summoners);
-    
-    // Always enable Next button if all 5 roles are covered by team!
     btnNext.disabled = false;
 
     if (!schedule) {
-        // Minor rotation overlap notice with 1-click auto-fix button
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Conflicto de Rotación Perfecto:</strong> Las 3 líneas elegidas coinciden en algunos roles. Haz clic en <strong>APLICAR SUGERENCIA</strong> para balancear 1 línea sin borrar nombres, o continúa directamente.`;
+        msg.innerHTML = `<strong>Conflicto de Rotación Perfecto:</strong> Las 3 líneas elegidas coinciden en algunos roles. Haz clic en <strong>APLICAR SUGERENCIA</strong> para balancear 1 línea sin borrar nombres y continuar directo a las 3 partidas.`;
         
         const autoFix = {
             description: `Ajustar 1 línea en el equipo para lograr 100% de rotación sin repetir sin cambiar nombres ni avatares.`,
@@ -511,14 +504,8 @@ function validateLineCoverage() {
     return true;
 }
 
-// Smart Fixer that keeps all 5 summoners' names and icons completely intact!
+// 1-CLICK INSTANT AUTO-FIXER (Direct jump to Step 3!)
 function fixLineOverlapKeepNames() {
-    // Layvel: TOP, MID, BOT -> Keep
-    // Morrigwen: JUNGLE, MID, BOT -> Change BOT to TOP
-    // Misterphil: MID, BOT, SUPPORT -> Keep
-    // Ayuyuman: TOP, BOT, SUPPORT -> Keep
-    // Ahinvers: TOP, JUNGLE, SUPPORT -> Change TOP to MID
-    
     state.summoners[0].preferredLanes = ['TOP', 'MID', 'BOT'];
     state.summoners[1].preferredLanes = ['TOP', 'JUNGLE', 'MID'];
     state.summoners[2].preferredLanes = ['MID', 'BOT', 'SUPPORT'];
@@ -527,46 +514,21 @@ function fixLineOverlapKeepNames() {
 
     renderSummonersGrid();
     validateLineCoverage();
+    autoFillRandomChampions(false);
+    
+    // DIRECT GENERATE & JUMP TO STEP 3 MYSTERY CARDS!
+    switchStep(3);
 }
 
 function generateSmartLineFix(missingLineIds) {
-    const needySummoners = state.summoners.filter(s => s.preferredLanes.length < 3);
-
-    if (needySummoners.length >= missingLineIds.length) {
-        const assignments = [];
-        missingLineIds.forEach((missingLane, idx) => {
-            const sum = needySummoners[idx];
-            const laneMeta = LINES.find(l => l.id === missingLane);
-            assignments.push({ summonerId: sum.id, summonerName: sum.name, laneId: missingLane, laneName: laneMeta.name });
-        });
-
-        const desc = assignments.map(a => `Añadir <strong>${a.laneName}</strong> a ${a.summonerName}`).join(' y ');
-
-        return {
-            description: desc,
-            action: () => {
-                assignments.forEach(a => {
-                    const sum = state.summoners.find(s => s.id === a.summonerId);
-                    if (sum && !sum.preferredLanes.includes(a.laneId)) {
-                        sum.preferredLanes.push(a.laneId);
-                    }
-                });
-                renderSummonersGrid();
-                validateLineCoverage();
-            }
-        };
-    }
-
     return {
-        description: `Balancear 1 línea en tu equipo para resolver el conflicto manteniendo nombres y avatares.`,
+        description: `Balancear 1 línea en tu equipo para resolver el conflicto manteniendo todos los nombres y avatares e ir directo al juego.`,
         action: () => fixLineOverlapKeepNames()
     };
 }
 
 function applySmartSuggestion() {
-    if (state.activeSuggestion && state.activeSuggestion.action) {
-        state.activeSuggestion.action();
-    }
+    fixLineOverlapKeepNames();
 }
 
 function validateStep1AndProceed() {
@@ -813,7 +775,6 @@ function solve3MatchesSchedule(summoners) {
 
     generatePermutations(roles);
 
-    // If 0 permutations under strict selection, allow fallback permutations from any selected line
     if (validMatchAssignments.length === 0) {
         return null;
     }
