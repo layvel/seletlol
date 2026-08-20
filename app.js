@@ -20,11 +20,11 @@ const DEFAULT_SUMMONER_PRESETS = [
 
 // Suggested champions by line for quick autofill
 const META_SUGGESTIONS = {
-    'TOP': ['Darius', 'Garen', 'Aatrox', 'Fiora', 'Jax', 'Renekton', 'Sett', 'Camille'],
-    'JUNGLE': ['LeeSin', 'Viego', 'JarvanIV', 'Graves', 'KhaZix', 'Elise', 'XinZhao', 'Warwick'],
-    'MID': ['Ahri', 'Yasuo', 'Zed', 'Syndra', 'Lux', 'Yone', 'Vex', 'Katarina'],
-    'BOT': ['Jinx', 'Kaisa', 'Ezreal', 'Caitlyn', 'Vayne', 'Jhin', 'Lucian', 'Ashe'],
-    'SUPPORT': ['Thresh', 'Lulu', 'Nautilus', 'Leona', 'Blitzcrank', 'Nami', 'Morgana', 'Pyke']
+    'TOP': ['Darius', 'Garen', 'Aatrox', 'Fiora', 'Jax', 'Renekton', 'Sett', 'Camille', 'Teemo', 'Mordekaiser', 'Volibear', 'Illaoi', 'Kled', 'Malphite', 'Ornn', 'Shen'],
+    'JUNGLE': ['LeeSin', 'Viego', 'JarvanIV', 'Graves', 'KhaZix', 'Elise', 'XinZhao', 'Warwick', 'MasterYi', 'Shaco', 'Kayn', 'Evelynn', 'Rengar', 'Nunu', 'Amumu', 'Hecarim'],
+    'MID': ['Ahri', 'Yasuo', 'Zed', 'Syndra', 'Lux', 'Yone', 'Vex', 'Katarina', 'Akali', 'Veigar', 'Fizz', 'LeBlanc', 'Talon', 'Malzahar', 'Anivia', 'Orianna'],
+    'BOT': ['Jinx', 'Kaisa', 'Ezreal', 'Caitlyn', 'Vayne', 'Jhin', 'Lucian', 'Ashe', 'Draven', 'Samira', 'Tristana', 'Xayah', 'MissFortune', 'Sivir', 'Varus', 'Twitch'],
+    'SUPPORT': ['Thresh', 'Lulu', 'Nautilus', 'Leona', 'Blitzcrank', 'Nami', 'Morgana', 'Pyke', 'Lux', 'Senna', 'Yuumi', 'Karma', 'Swain', 'Bard', 'Soraka', 'Zilean']
 };
 
 // Global App State - Mystery Mode set as MAIN experience by default!
@@ -36,7 +36,7 @@ const state = {
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY', // 'MYSTERY' (Main Default) or 'STANDARD'
-    forceSummaryUnlocked: false, // Manual unlock toggle for summary table
+    forceSummaryUnlocked: false,
     
     // Modal state
     modalTarget: null,
@@ -45,11 +45,11 @@ const state = {
 
     // 5 Summoners Data
     summoners: [
-        { id: 1, name: 'Invocador 1', preferredLanes: [], pools: {} },
-        { id: 2, name: 'Invocador 2', preferredLanes: [], pools: {} },
-        { id: 3, name: 'Invocador 3', preferredLanes: [], pools: {} },
-        { id: 4, name: 'Invocador 4', preferredLanes: [], pools: {} },
-        { id: 5, name: 'Invocador 5', preferredLanes: [], pools: {} }
+        { id: 1, name: 'Invocador 1', region: 'LAN', preferredLanes: [], pools: {} },
+        { id: 2, name: 'Invocador 2', region: 'LAN', preferredLanes: [], pools: {} },
+        { id: 3, name: 'Invocador 3', region: 'LAN', preferredLanes: [], pools: {} },
+        { id: 4, name: 'Invocador 4', region: 'LAN', preferredLanes: [], pools: {} },
+        { id: 5, name: 'Invocador 5', region: 'LAN', preferredLanes: [], pools: {} }
     ],
 
     // Smart suggestion cache
@@ -77,14 +77,42 @@ async function initApp() {
     await loadRiotDataDragon();
 }
 
-// QUICK 1-CLICK RANDOM DRAFT
+// 100% TRUE RANDOM SHUFFLE DRAFT & REROLL MECHANIC
 function executeQuickRandomDraft() {
     state.forceSummaryUnlocked = false;
-    presetStandardTeam();
+
+    // 1. Generate 100% TRUE RANDOM valid 3-line combinations for all 5 summoners
+    let validSchedule = null;
+    let attempts = 0;
+
+    while (!validSchedule && attempts < 200) {
+        attempts++;
+        state.summoners.forEach(s => {
+            // Pick 3 completely random lines from ALL 5 available lines
+            const allLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
+            const shuffled = [...allLanes].sort(() => 0.5 - Math.random());
+            s.preferredLanes = shuffled.slice(0, 3);
+        });
+
+        // Test if this random line setup can solve 3 matches
+        validSchedule = solve3MatchesSchedule(state.summoners);
+    }
+
+    if (!validSchedule) {
+        // Fallback to standard preset if random loop hit extreme edge case
+        presetStandardTeam();
+    }
+
+    // 2. Pick completely random champions from full LoL database for every selected line
     autoFillRandomChampions(false);
+
+    // 3. Set mode & generate 3 matches
     state.appMode = 'MYSTERY';
     setAppMode('MYSTERY');
     switchStep(3);
+
+    // Re-render step 1 grid in background so user sees updated lines if they return
+    renderSummonersGrid();
 }
 
 // MODE SWITCHER (MYSTERY vs STANDARD)
@@ -169,8 +197,11 @@ function renderSummonersGrid() {
 
         card.innerHTML = `
             <div class="summoner-card-header">
-                <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
-                       onchange="updateSummonerName(${sum.id}, this.value)">
+                <div class="summoner-name-wrapper">
+                    <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
+                           placeholder="Nombre de Invocador (ej: Faker)"
+                           onchange="updateSummonerName(${sum.id}, this.value)">
+                </div>
             </div>
             <div class="lanes-selector-title">Preferencias (${sum.preferredLanes.length}/3 Líneas)</div>
             <div class="lanes-options-group">
@@ -238,7 +269,7 @@ function validateLineCoverage() {
     const unselectedSummoners = state.summoners.filter(s => s.preferredLanes.length === 0);
     if (unselectedSummoners.length > 0) {
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas o usa el botón <strong>¡Generar 3 Partidas Aleatorias!</strong>.`;
+        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas o usa el botón <strong>¡Tirar Dados Aleatorios!</strong>.`;
         btnNext.disabled = true;
         return false;
     }
@@ -578,16 +609,19 @@ function solve3MatchesSchedule(summoners) {
         return null;
     }
 
-    for (let i = 0; i < validMatchAssignments.length; i++) {
-        const m1 = validMatchAssignments[i];
-        for (let j = 0; j < validMatchAssignments.length; j++) {
+    // Shuffle valid match configurations for additional random diversity!
+    const shuffledMatches = [...validMatchAssignments].sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < shuffledMatches.length; i++) {
+        const m1 = shuffledMatches[i];
+        for (let j = 0; j < shuffledMatches.length; j++) {
             if (i === j) continue;
-            const m2 = validMatchAssignments[j];
+            const m2 = shuffledMatches[j];
             if (!m1.every((role, sIdx) => role !== m2[sIdx])) continue;
 
-            for (let k = 0; k < validMatchAssignments.length; k++) {
+            for (let k = 0; k < shuffledMatches.length; k++) {
                 if (k === i || k === j) continue;
-                const m3 = validMatchAssignments[k];
+                const m3 = shuffledMatches[k];
                 const isValid3 = m1.every((role, sIdx) => m3[sIdx] !== role && m3[sIdx] !== m2[sIdx]);
                 if (isValid3) {
                     return [m1, m2, m3];
@@ -794,14 +828,12 @@ function areAllCardsRevealedAcrossAllMatches() {
 }
 
 function renderMatchesSummaryTable() {
-    const tbody = document.getElementById('matchesSummaryTbody');
     const summaryCard = document.querySelector('.matches-summary-card');
     if (!state.generatedMatches) return;
 
     const isFullyUnlocked = areAllCardsRevealedAcrossAllMatches();
 
     if (!isFullyUnlocked) {
-        // Render Anti-Spoiler Locked State
         summaryCard.innerHTML = `
             <div class="summary-locked-banner" style="text-align: center; padding: 1.5rem; background: rgba(1, 10, 19, 0.7); border: 1px dashed var(--gold-primary); border-radius: 6px;">
                 <div style="font-size: 2rem; color: var(--gold-primary); margin-bottom: 0.5rem;"><i class="fa-solid fa-lock"></i></div>
@@ -817,7 +849,6 @@ function renderMatchesSummaryTable() {
         return;
     }
 
-    // Render Full Unlocked Summary Table
     let tableHTML = `
         <h3><i class="fa-solid fa-list-check"></i> Resumen de Rotación de las 3 Partidas</h3>
         <div class="table-responsive">
