@@ -38,12 +38,12 @@ const RIOT_SUMMONER_PRESETS = {
     'KERIA#KR1': { iconId: 539, level: 690, mainChamps: ['Thresh', 'Lux', 'Braum', 'Nami', 'Bard'], region: 'KR' }
 };
 
-// Global App State
+// Global App State - Default start on Step 1 (Invocadores y Líneas)
 const state = {
     version: '14.1.1',
     championsDict: {},
     championsList: [],
-    currentStep: 1,
+    currentStep: 1, // Start on Step 1 directly!
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY',
@@ -520,13 +520,18 @@ function validateStep1AndProceed() {
 // STEP NAVIGATION SWITCHER
 function switchStep(stepNum) {
     state.currentStep = stepNum;
+
+    const stepOrder = [1, 2, 3, 0];
     
-    document.querySelectorAll('.step-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === stepNum);
+    document.querySelectorAll('.stepper-nav .step-btn').forEach((btn, idx) => {
+        const btnStep = stepOrder[idx];
+        btn.classList.toggle('active', btnStep === stepNum);
     });
 
-    document.querySelectorAll('.step-content').forEach((sec, idx) => {
-        sec.classList.toggle('active', idx === stepNum);
+    document.querySelectorAll('.step-content').forEach(sec => {
+        const secId = sec.id;
+        const targetId = `step${stepNum}Content`;
+        sec.classList.toggle('active', secId === targetId);
     });
 
     if (stepNum === 2) {

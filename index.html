@@ -50,11 +50,7 @@
     <main class="main-container">
         <!-- Step Navigation Tabs -->
         <nav class="stepper-nav">
-            <button class="step-btn active" id="tabStep0" onclick="switchStep(0)">
-                <span class="step-num"><i class="fa-solid fa-satellite-dish"></i></span>
-                <span class="step-label">Buscador Riot API</span>
-            </button>
-            <button class="step-btn" id="tabStep1" onclick="switchStep(1)">
+            <button class="step-btn active" id="tabStep1" onclick="switchStep(1)">
                 <span class="step-num">1</span>
                 <span class="step-label">Invocadores y Líneas</span>
             </button>
@@ -66,6 +62,10 @@
                 <span class="step-num">3</span>
                 <span class="step-label">Simulación 3 Partidas</span>
             </button>
+            <button class="step-btn" id="tabStep0" onclick="switchStep(0)">
+                <span class="step-num"><i class="fa-solid fa-satellite-dish"></i></span>
+                <span class="step-label">Buscador Riot API</span>
+            </button>
         </nav>
 
         <!-- Validation Alert & Smart Suggestions Banner -->
@@ -73,7 +73,7 @@
             <div class="banner-main">
                 <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="banner-message" id="validationMessage">
-                    Escribe tu Riot ID (ej: **Layvel#LAS**) en el Buscador Riot API para cargar tu avatar e historial real de campeones...
+                    Ingresa los nombres de tus 5 invocadores o usa el botón **¡Generar 3 Partidas Aleatorias!**...
                 </div>
             </div>
             <div class="smart-suggestion-box" id="smartSuggestionBox" style="display: none;">
@@ -87,54 +87,11 @@
             </div>
         </div>
 
-        <!-- STEP 0: DEDICATED RIOT API SUMMONER SEARCH TAB -->
-        <section class="step-content active" id="step0Content">
-            <div class="section-intro">
-                <h2><i class="fa-solid fa-satellite-dish"></i> Buscador de Invocador Riot API (LAS / LAN / NA / EUW)</h2>
-                <p>Ingresa tu **Nombre#Tag** (ej: <strong>Layvel#LAS</strong>) para traer tu foto de perfil oficial y tus campeones con mayor maestría (Riven, Yasuo, Lucian, Jhin, Samira).</p>
-            </div>
-
-            <div class="riot-api-tester-card">
-                <div class="tester-input-bar">
-                    <select id="riotRegionSelect" class="region-select-input">
-                        <option value="las" selected>LAS (Latinoamérica Sur)</option>
-                        <option value="lan">LAN (Latinoamérica Norte)</option>
-                        <option value="na">NA (Norteamérica)</option>
-                        <option value="euw">EUW (Europa Oeste)</option>
-                        <option value="kr">KR (Corea)</option>
-                    </select>
-
-                    <div class="search-box">
-                        <i class="fa-solid fa-user-ninja"></i>
-                        <input type="text" id="riotSingleSearchInput" value="Layvel#LAS" placeholder="Ej: Layvel#LAS, Faker#KR1..." onkeypress="if(event.key==='Enter') executeSingleSummonerSearch()">
-                    </div>
-
-                    <button class="hextech-btn primary" onclick="executeSingleSummonerSearch()">
-                        <i class="fa-solid fa-satellite-dish"></i> Consultar Riot API
-                    </button>
-                </div>
-
-                <div class="sample-chips-bar">
-                    <span class="chip-label">Prueba rápida con tu cuenta o un pro:</span>
-                    <button class="chip-btn primary-chip" onclick="quickSearchSample('Layvel#LAS')">⭐ Layvel#LAS (Tu Cuenta)</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Faker#KR1')">Faker#KR1</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Caps#EUW')">Caps#EUW</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Reckless#EUW')">Reckless#EUW</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Keria#KR1')">Keria#KR1</button>
-                </div>
-            </div>
-
-            <!-- Single Summoner Live Result Card -->
-            <div class="riot-result-container" id="riotResultContainer">
-                <!-- Dynamically loaded on search / init -->
-            </div>
-        </section>
-
-        <!-- STEP 1: SUMMONER LANE SELECTION -->
-        <section class="step-content" id="step1Content">
+        <!-- STEP 1: SUMMONER LANE SELECTION (INITIAL DEFAULT VIEW!) -->
+        <section class="step-content active" id="step1Content">
             <div class="section-intro">
                 <h2><i class="fa-solid fa-users"></i> Configuración del Equipo de Invocadores</h2>
-                <p>Puedes importar tu perfil de la pestaña **Buscador Riot API**, ingresar los nombres manualmente o usar el botón **¡Generar 3 Partidas Aleatorias!**.</p>
+                <p>Escribe los nombres de los 5 invocadores y sus líneas o usa la aleatoriedad rápida para generar las 3 partidas al instante.</p>
             </div>
 
             <!-- Quick Random Draft Hero Banner -->
@@ -257,6 +214,49 @@
                 <button class="hextech-btn primary" onclick="exportDraftConfig()">
                     <i class="fa-solid fa-download"></i> Exportar Simulación (JSON)
                 </button>
+            </div>
+        </section>
+
+        <!-- STEP 0: DEDICATED RIOT API SUMMONER SEARCH TAB (OPTIONAL UTILITY TAB) -->
+        <section class="step-content" id="step0Content">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-satellite-dish"></i> Buscador de Invocador Riot API (LAS / LAN / NA / EUW)</h2>
+                <p>Ingresa tu **Nombre#Tag** (ej: <strong>Layvel#LAS</strong>) para traer tu foto de perfil oficial y tus campeones con mayor maestría (Riven, Yasuo, Lucian, Jhin, Samira).</p>
+            </div>
+
+            <div class="riot-api-tester-card">
+                <div class="tester-input-bar">
+                    <select id="riotRegionSelect" class="region-select-input">
+                        <option value="las" selected>LAS (Latinoamérica Sur)</option>
+                        <option value="lan">LAN (Latinoamérica Norte)</option>
+                        <option value="na">NA (Norteamérica)</option>
+                        <option value="euw">EUW (Europa Oeste)</option>
+                        <option value="kr">KR (Corea)</option>
+                    </select>
+
+                    <div class="search-box">
+                        <i class="fa-solid fa-user-ninja"></i>
+                        <input type="text" id="riotSingleSearchInput" value="Layvel#LAS" placeholder="Ej: Layvel#LAS, Faker#KR1..." onkeypress="if(event.key==='Enter') executeSingleSummonerSearch()">
+                    </div>
+
+                    <button class="hextech-btn primary" onclick="executeSingleSummonerSearch()">
+                        <i class="fa-solid fa-satellite-dish"></i> Consultar Riot API
+                    </button>
+                </div>
+
+                <div class="sample-chips-bar">
+                    <span class="chip-label">Prueba rápida con tu cuenta o un pro:</span>
+                    <button class="chip-btn primary-chip" onclick="quickSearchSample('Layvel#LAS')">⭐ Layvel#LAS (Tu Cuenta)</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Faker#KR1')">Faker#KR1</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Caps#EUW')">Caps#EUW</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Reckless#EUW')">Reckless#EUW</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Keria#KR1')">Keria#KR1</button>
+                </div>
+            </div>
+
+            <!-- Single Summoner Live Result Card -->
+            <div class="riot-result-container" id="riotResultContainer">
+                <!-- Dynamically loaded on search -->
             </div>
         </section>
     </main>
