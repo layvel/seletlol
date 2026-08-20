@@ -450,10 +450,32 @@ body.hextech-theme {
 
 .summoner-card-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.6rem;
     border-bottom: 1px solid rgba(250, 250, 250, 0.08);
-    padding-bottom: 0.6rem;
+    padding-bottom: 0.8rem;
+}
+
+.summoner-avatar-box {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.summoner-avatar-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-primary);
+    box-shadow: 0 0 10px var(--gold-glow);
+    object-fit: cover;
+}
+
+.summoner-name-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
 }
 
 .summoner-name-input {
@@ -462,7 +484,7 @@ body.hextech-theme {
     color: var(--gold-bright);
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.95rem;
     padding: 0.4rem 0.6rem;
     border-radius: 4px;
     width: 100%;
@@ -472,6 +494,27 @@ body.hextech-theme {
     outline: none;
     border-color: var(--cyan-hextech);
     box-shadow: 0 0 8px var(--cyan-glow);
+}
+
+.riot-search-btn {
+    background: rgba(10, 200, 185, 0.15);
+    border: 1px solid var(--cyan-hextech);
+    color: var(--cyan-hextech);
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.riot-search-btn:hover {
+    background: var(--cyan-hextech);
+    color: var(--bg-dark-void);
+    font-weight: 700;
 }
 
 .lanes-selector-title {

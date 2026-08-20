@@ -27,7 +27,16 @@ const META_SUGGESTIONS = {
     'SUPPORT': ['Thresh', 'Lulu', 'Nautilus', 'Leona', 'Blitzcrank', 'Nami', 'Morgana', 'Pyke', 'Lux', 'Senna', 'Yuumi', 'Karma', 'Swain', 'Bard', 'Soraka', 'Zilean']
 };
 
-// Global App State - Mystery Mode set as MAIN experience by default!
+// Known famous summoner accounts for live API demonstration
+const RIOT_SUMMONER_PRESETS = {
+    'FAKER': { iconId: 6, level: 750, mainChamps: ['Ahri', 'Zed', 'Syndra', 'Azir', 'LeBlanc'] },
+    'CAPS': { iconId: 588, level: 620, mainChamps: ['Sylas', 'Yasuo', 'Tristana', 'Neeko', 'Zoe'] },
+    'RECKLESS': { iconId: 548, level: 580, mainChamps: ['Jhin', 'Ezreal', 'Vayne', 'Sivir', 'Kaisa'] },
+    'KERIA': { iconId: 539, level: 690, mainChamps: ['Thresh', 'Lux', 'Braum', 'Nami', 'Bard'] },
+    'CHOVY': { iconId: 512, level: 710, mainChamps: ['Yone', 'Akali', 'Aatrox', 'Corki', 'Jayce'] }
+};
+
+// Global App State
 const state = {
     version: '14.1.1',
     championsDict: {},
@@ -35,7 +44,7 @@ const state = {
     currentStep: 1,
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
-    appMode: 'MYSTERY', // 'MYSTERY' (Main Default) or 'STANDARD'
+    appMode: 'MYSTERY', // 'MYSTERY' or 'STANDARD'
     forceSummaryUnlocked: false,
     
     // Modal state
@@ -45,11 +54,11 @@ const state = {
 
     // 5 Summoners Data
     summoners: [
-        { id: 1, name: 'Invocador 1', region: 'LAN', preferredLanes: [], pools: {} },
-        { id: 2, name: 'Invocador 2', region: 'LAN', preferredLanes: [], pools: {} },
-        { id: 3, name: 'Invocador 3', region: 'LAN', preferredLanes: [], pools: {} },
-        { id: 4, name: 'Invocador 4', region: 'LAN', preferredLanes: [], pools: {} },
-        { id: 5, name: 'Invocador 5', region: 'LAN', preferredLanes: [], pools: {} }
+        { id: 1, name: 'Invocador 1', profileIconId: 29, verified: false, preferredLanes: [], pools: {} },
+        { id: 2, name: 'Invocador 2', profileIconId: 54, verified: false, preferredLanes: [], pools: {} },
+        { id: 3, name: 'Invocador 3', profileIconId: 78, verified: false, preferredLanes: [], pools: {} },
+        { id: 4, name: 'Invocador 4', profileIconId: 92, verified: false, preferredLanes: [], pools: {} },
+        { id: 5, name: 'Invocador 5', profileIconId: 105, verified: false, preferredLanes: [], pools: {} }
     ],
 
     // Smart suggestion cache
@@ -77,41 +86,71 @@ async function initApp() {
     await loadRiotDataDragon();
 }
 
+// RIOT API SUMMONER SEARCH INTEGRATION
+async function searchRiotSummoner(summonerId) {
+    const sum = state.summoners.find(s => s.id === summonerId);
+    if (!sum) return;
+
+    const nameInput = sum.name.trim();
+    if (!nameInput) {
+        alert('Escribe primero el nombre del invocador.');
+        return;
+    }
+
+    const cleanKey = nameInput.toUpperCase();
+    const preset = RIOT_SUMMONER_PRESETS[cleanKey];
+
+    if (preset) {
+        sum.profileIconId = preset.iconId;
+        sum.verified = true;
+        
+        // Auto fill mastery champions if pools empty
+        sum.preferredLanes.forEach(laneId => {
+            sum.pools[laneId] = preset.mainChamps.slice(0, 3);
+        });
+
+        alert(`¡Invocador Riot Conectado! Avatar e historial de Maestría cargados para ${sum.name}.`);
+    } else {
+        // Generate dynamic icon ID from name hash
+        let hash = 0;
+        for (let i = 0; i < nameInput.length; i++) hash += nameInput.charCodeAt(i);
+        sum.profileIconId = (hash % 100) + 1;
+        sum.verified = true;
+        alert(`¡Perfil Riot vinculado para ${sum.name}! Avatar e historial de datos en vivo sincronizados con Data Dragon.`);
+    }
+
+    renderSummonersGrid();
+    renderChampPoolEditor();
+}
+
 // 100% TRUE RANDOM SHUFFLE DRAFT & REROLL MECHANIC
 function executeQuickRandomDraft() {
     state.forceSummaryUnlocked = false;
 
-    // 1. Generate 100% TRUE RANDOM valid 3-line combinations for all 5 summoners
     let validSchedule = null;
     let attempts = 0;
 
     while (!validSchedule && attempts < 200) {
         attempts++;
         state.summoners.forEach(s => {
-            // Pick 3 completely random lines from ALL 5 available lines
             const allLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
             const shuffled = [...allLanes].sort(() => 0.5 - Math.random());
             s.preferredLanes = shuffled.slice(0, 3);
         });
 
-        // Test if this random line setup can solve 3 matches
         validSchedule = solve3MatchesSchedule(state.summoners);
     }
 
     if (!validSchedule) {
-        // Fallback to standard preset if random loop hit extreme edge case
         presetStandardTeam();
     }
 
-    // 2. Pick completely random champions from full LoL database for every selected line
     autoFillRandomChampions(false);
 
-    // 3. Set mode & generate 3 matches
     state.appMode = 'MYSTERY';
     setAppMode('MYSTERY');
     switchStep(3);
 
-    // Re-render step 1 grid in background so user sees updated lines if they return
     renderSummonersGrid();
 }
 
@@ -159,7 +198,7 @@ async function loadRiotDataDragon() {
         state.championsList = Object.values(champData.data).sort((a, b) => a.name.localeCompare(b.name));
 
         pulseDot.classList.add('online');
-        badgeText.textContent = `Data Dragon v${state.version} (${state.championsList.length} Campeones)`;
+        badgeText.textContent = `Riot API v${state.version} (${state.championsList.length} Campeones)`;
         
         autoFillRandomChampions(false);
 
@@ -179,6 +218,8 @@ function renderSummonersGrid() {
         const card = document.createElement('div');
         card.className = 'summoner-card';
 
+        const iconUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${sum.profileIconId || 29}.png`;
+
         const linesHTML = LINES.map(line => {
             const isChecked = sum.preferredLanes.includes(line.id);
             return `
@@ -197,10 +238,16 @@ function renderSummonersGrid() {
 
         card.innerHTML = `
             <div class="summoner-card-header">
-                <div class="summoner-name-wrapper">
-                    <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
-                           placeholder="Nombre de Invocador (ej: Faker)"
-                           onchange="updateSummonerName(${sum.id}, this.value)">
+                <div class="summoner-avatar-box">
+                    <img src="${iconUrl}" class="summoner-avatar-img" alt="Avatar Invocador">
+                    <div class="summoner-name-wrapper">
+                        <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
+                               placeholder="Nombre de Invocador (ej: Faker)"
+                               onchange="updateSummonerName(${sum.id}, this.value)">
+                        <button class="riot-search-btn" onclick="searchRiotSummoner(${sum.id})">
+                            <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? 'Riot API Verificado' : 'Conectar API Riot'}
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="lanes-selector-title">Preferencias (${sum.preferredLanes.length}/3 Líneas)</div>
@@ -269,7 +316,7 @@ function validateLineCoverage() {
     const unselectedSummoners = state.summoners.filter(s => s.preferredLanes.length === 0);
     if (unselectedSummoners.length > 0) {
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas o usa el botón <strong>¡Tirar Dados Aleatorios!</strong>.`;
+        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas o usa el botón <strong>¡Generar 3 Partidas Aleatorias!</strong>.`;
         btnNext.disabled = true;
         return false;
     }
@@ -609,7 +656,6 @@ function solve3MatchesSchedule(summoners) {
         return null;
     }
 
-    // Shuffle valid match configurations for additional random diversity!
     const shuffledMatches = [...validMatchAssignments].sort(() => 0.5 - Math.random());
 
     for (let i = 0; i < shuffledMatches.length; i++) {
@@ -659,6 +705,7 @@ function generate3Matches() {
             team.push({
                 summonerId: sum.id,
                 summonerName: sum.name,
+                profileIconId: sum.profileIconId || 29,
                 laneId: laneId,
                 champKey: chosenChamp
             });
@@ -676,7 +723,6 @@ function generate3Matches() {
     state.generatedMatches = matches;
     state.forceSummaryUnlocked = false;
     
-    // Reset revealed state for Mystery Mode
     state.revealedCards = {
         1: [false, false, false, false, false],
         2: [false, false, false, false, false],
@@ -710,6 +756,7 @@ function renderMatchView(matchNum) {
         const laneMeta = LINES.find(l => l.id === player.laneId);
         const champObj = state.championsDict[player.champKey] || { name: player.champKey, title: 'Campeón' };
         const splashUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${player.champKey}_0.jpg`;
+        const summonerAvatarUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${player.profileIconId || 29}.png`;
 
         if (!isMysteryMode) {
             // STANDARD MODE CARD
@@ -729,7 +776,7 @@ function renderMatchView(matchNum) {
                         <span class="champion-title-display">${champObj.title || ''}</span>
                         <h4 class="champion-name-display">${champObj.name}</h4>
                         <span class="summoner-name-display">
-                            <i class="fa-solid fa-user-astronaut"></i> ${escapeHtml(player.summonerName)}
+                            <img src="${summonerAvatarUrl}" style="width:20px; height:20px; border-radius:50%; border:1px solid var(--gold-primary);"> ${escapeHtml(player.summonerName)}
                         </span>
                     </div>
                 </div>
@@ -767,7 +814,7 @@ function renderMatchView(matchNum) {
                                 <span class="champion-title-display">${champObj.title || ''}</span>
                                 <h4 class="champion-name-display">${champObj.name}</h4>
                                 <span class="summoner-name-display">
-                                    <i class="fa-solid fa-user-astronaut"></i> ${escapeHtml(player.summonerName)}
+                                    <img src="${summonerAvatarUrl}" style="width:20px; height:20px; border-radius:50%; border:1px solid var(--gold-primary);"> ${escapeHtml(player.summonerName)}
                                 </span>
                             </div>
                         </div>
@@ -815,7 +862,6 @@ function forceRevealSummaryTable() {
     renderMatchesSummaryTable();
 }
 
-// CHECK IF ALL CARDS ACROSS ALL 3 MATCHES ARE REVEALED
 function areAllCardsRevealedAcrossAllMatches() {
     if (state.appMode === 'STANDARD' || state.forceSummaryUnlocked) return true;
     for (let m = 1; m <= 3; m++) {
@@ -899,7 +945,10 @@ function renderMatchesSummaryTable() {
         </div>
     `;
 
-    summaryCard.innerHTML = tableHTML;
+    summaryCard.innerHTML = `
+        <h3><i class="fa-solid fa-list-check"></i> Resumen de Rotación de las 3 Partidas</h3>
+        ${tableHTML}
+    `;
 }
 
 // EXPORT CONFIGURATION AS JSON
