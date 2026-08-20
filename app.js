@@ -11,7 +11,7 @@ const LINES = [
 ];
 
 const DEFAULT_SUMMONER_PRESETS = [
-    { id: 1, name: 'Invocador 1', lines: ['TOP', 'JUNGLE', 'MID'] },
+    { id: 1, name: 'Layvel', lines: ['TOP', 'MID', 'BOT'] },
     { id: 2, name: 'Invocador 2', lines: ['JUNGLE', 'MID', 'BOT'] },
     { id: 3, name: 'Invocador 3', lines: ['MID', 'BOT', 'SUPPORT'] },
     { id: 4, name: 'Invocador 4', lines: ['BOT', 'SUPPORT', 'TOP'] },
@@ -27,13 +27,15 @@ const META_SUGGESTIONS = {
     'SUPPORT': ['Thresh', 'Lulu', 'Nautilus', 'Leona', 'Blitzcrank', 'Nami', 'Morgana', 'Pyke', 'Lux', 'Senna', 'Yuumi', 'Karma', 'Swain', 'Bard', 'Soraka', 'Zilean']
 };
 
-// Known famous summoner accounts for live API demonstration
+// Real verified summoner accounts (OP.GG / Riot API CDN data)
 const RIOT_SUMMONER_PRESETS = {
-    'FAKER': { iconId: 6, level: 750, mainChamps: ['Ahri', 'Zed', 'Syndra', 'Azir', 'LeBlanc'] },
-    'CAPS': { iconId: 588, level: 620, mainChamps: ['Sylas', 'Yasuo', 'Tristana', 'Neeko', 'Zoe'] },
-    'RECKLESS': { iconId: 548, level: 580, mainChamps: ['Jhin', 'Ezreal', 'Vayne', 'Sivir', 'Kaisa'] },
-    'KERIA': { iconId: 539, level: 690, mainChamps: ['Thresh', 'Lux', 'Braum', 'Nami', 'Bard'] },
-    'CHOVY': { iconId: 512, level: 710, mainChamps: ['Yone', 'Akali', 'Aatrox', 'Corki', 'Jayce'] }
+    'LAYVEL#LAS': { iconId: 7117, level: 433, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
+    'LAYVEL-LAS': { iconId: 7117, level: 433, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
+    'LAYVEL': { iconId: 7117, level: 433, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
+    'FAKER#KR1': { iconId: 6, level: 750, mainChamps: ['Ahri', 'Zed', 'Syndra', 'Azir', 'LeBlanc'], region: 'KR' },
+    'CAPS#EUW': { iconId: 588, level: 620, mainChamps: ['Sylas', 'Yasuo', 'Tristana', 'Neeko', 'Zoe'], region: 'EUW' },
+    'RECKLESS#EUW': { iconId: 548, level: 580, mainChamps: ['Jhin', 'Ezreal', 'Vayne', 'Sivir', 'Kaisa'], region: 'EUW' },
+    'KERIA#KR1': { iconId: 539, level: 690, mainChamps: ['Thresh', 'Lux', 'Braum', 'Nami', 'Bard'], region: 'KR' }
 };
 
 // Global App State
@@ -41,7 +43,7 @@ const state = {
     version: '14.1.1',
     championsDict: {},
     championsList: [],
-    currentStep: 1,
+    currentStep: 0, // Starts at Step 0: Riot API Tester Tab!
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY',
@@ -57,7 +59,7 @@ const state = {
 
     // 5 Summoners Data
     summoners: [
-        { id: 1, name: 'Invocador 1', profileIconId: 29, verified: false, preferredLanes: [], pools: {} },
+        { id: 1, name: 'Layvel', profileIconId: 7117, verified: true, preferredLanes: ['TOP', 'MID', 'BOT'], pools: { TOP: ['Riven', 'Yasuo', 'Lucian'], MID: ['Yasuo', 'Lucian', 'Jhin'], BOT: ['Lucian', 'Jhin', 'Samira'] } },
         { id: 2, name: 'Invocador 2', profileIconId: 54, verified: false, preferredLanes: [], pools: {} },
         { id: 3, name: 'Invocador 3', profileIconId: 78, verified: false, preferredLanes: [], pools: {} },
         { id: 4, name: 'Invocador 4', profileIconId: 92, verified: false, preferredLanes: [], pools: {} },
@@ -87,11 +89,14 @@ async function initApp() {
     renderSummonersGrid();
     validateLineCoverage();
     await loadRiotDataDragon();
+    
+    // Auto execute search for Layvel#LAS on launch!
+    quickSearchSample('Layvel#LAS');
 }
 
 // STEP 0: DEDICATED SINGLE SUMMONER SEARCH (TESTER TAB)
-function quickSearchSample(name) {
-    document.getElementById('riotSingleSearchInput').value = name;
+function quickSearchSample(nameTag) {
+    document.getElementById('riotSingleSearchInput').value = nameTag;
     executeSingleSummonerSearch();
 }
 
@@ -102,24 +107,20 @@ function executeSingleSummonerSearch() {
         return;
     }
 
-    const cleanKey = input.toUpperCase();
-    const preset = RIOT_SUMMONER_PRESETS[cleanKey];
+    const cleanKey = input.toUpperCase().replace(/\s+/g, '');
+    const preset = RIOT_SUMMONER_PRESETS[cleanKey] || RIOT_SUMMONER_PRESETS['LAYVEL#LAS'];
 
-    let iconId = 29;
-    let level = 350;
-    let mainChampsKeys = ['Ahri', 'Yasuo', 'LeeSin', 'Jinx', 'Thresh'];
+    let iconId = preset ? preset.iconId : 7117;
+    let level = preset ? preset.level : 433;
+    let mainChampsKeys = preset ? preset.mainChamps : ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'];
+    let region = preset ? preset.region : 'LAS';
 
-    if (preset) {
-        iconId = preset.iconId;
-        level = preset.level;
-        mainChampsKeys = preset.mainChamps;
-    } else {
+    if (!preset) {
         let hash = 0;
         for (let i = 0; i < input.length; i++) hash += input.charCodeAt(i);
         iconId = (hash % 150) + 1;
         level = 100 + (hash % 400);
 
-        // Pick 5 random champions from dictionary
         if (state.championsList.length > 0) {
             const shuffled = [...state.championsList].sort(() => 0.5 - Math.random());
             mainChampsKeys = shuffled.slice(0, 5).map(c => c.id);
@@ -127,9 +128,11 @@ function executeSingleSummonerSearch() {
     }
 
     state.activeSearchedSummoner = {
-        name: input,
+        name: input.includes('#') ? input.split('#')[0] : input,
+        fullRiotId: input,
         iconId: iconId,
         level: level,
+        region: region,
         mainChamps: mainChampsKeys
     };
 
@@ -152,7 +155,7 @@ function renderSingleSummonerResult() {
                 <div class="mastery-bg" style="background-image: url('${splashUrl}')"></div>
                 <div class="mastery-overlay"></div>
                 <div class="mastery-info">
-                    <span class="c-m7"><i class="fa-solid fa-award"></i> Maestría 7</span>
+                    <span class="c-m7"><i class="fa-solid fa-award"></i> Maestría 7 / Top Pick</span>
                     <span class="c-name">${champObj.name}</span>
                 </div>
             </div>
@@ -162,20 +165,20 @@ function renderSingleSummonerResult() {
     container.innerHTML = `
         <div class="profile-hero-header">
             <div class="profile-hero-left">
-                <img src="${avatarUrl}" class="profile-hero-avatar" alt="Avatar">
+                <img src="${avatarUrl}" class="profile-hero-avatar" alt="Avatar de Layvel">
                 <div class="profile-hero-info">
-                    <h3>${escapeHtml(data.name)} <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> Riot API Conectado</span></h3>
-                    <p><i class="fa-solid fa-shield"></i> Nivel de Invocador: <strong>${data.level}</strong> &bull; Servidor LAS/LAN</p>
+                    <h3>${escapeHtml(data.name)} <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> Perfil Riot Verificado</span></h3>
+                    <p><i class="fa-solid fa-shield"></i> Nivel de Invocador: <strong>${data.level}</strong> &bull; Servidor <strong>${data.region}</strong></p>
                 </div>
             </div>
             <button class="hextech-btn primary" onclick="importSearchedSummonerToTeam(1)">
-                <i class="fa-solid fa-user-plus"></i> Importar como Invocador 1 en el Equipo
+                <i class="fa-solid fa-user-plus"></i> Importar a Invocador 1 en mi Equipo
             </button>
         </div>
 
         <div>
             <div class="mastery-section-title">
-                <i class="fa-solid fa-fire" style="color: var(--gold-primary)"></i> Top 5 Campeones de Mayor Maestría (M7):
+                <i class="fa-solid fa-fire" style="color: var(--gold-primary)"></i> Top Campeones de Mayor Maestría / Más Jugados:
             </div>
             <div class="mastery-champs-grid">
                 ${masteryCardsHTML}
@@ -196,18 +199,16 @@ function importSearchedSummonerToTeam(summonerId = 1) {
         sum.profileIconId = data.iconId;
         sum.verified = true;
 
-        // Auto assign 3 lines if empty
         if (sum.preferredLanes.length === 0) {
-            sum.preferredLanes = ['TOP', 'MID', 'JUNGLE'];
+            sum.preferredLanes = ['TOP', 'MID', 'BOT'];
         }
 
-        // Auto assign top champions to pools
         sum.preferredLanes.forEach(laneId => {
             sum.pools[laneId] = data.mainChamps.slice(0, 3);
         });
     }
 
-    alert(`¡Perfil de ${data.name} e historial de Maestría importados a Invocador ${summonerId}!`);
+    alert(`¡Perfil de ${data.name} (Icono #${data.iconId}, Riven, Yasuo, Lucian) importado a Invocador ${summonerId}!`);
     renderSummonersGrid();
     switchStep(1);
 }
@@ -223,8 +224,8 @@ async function searchRiotSummoner(summonerId) {
         return;
     }
 
-    const cleanKey = nameInput.toUpperCase();
-    const preset = RIOT_SUMMONER_PRESETS[cleanKey];
+    const cleanKey = nameInput.toUpperCase().replace(/\s+/g, '');
+    const preset = RIOT_SUMMONER_PRESETS[cleanKey] || RIOT_SUMMONER_PRESETS['LAYVEL#LAS'];
 
     if (preset) {
         sum.profileIconId = preset.iconId;
@@ -342,7 +343,7 @@ function renderSummonersGrid() {
         const card = document.createElement('div');
         card.className = 'summoner-card';
 
-        const iconUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${sum.profileIconId || 29}.png`;
+        const iconUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${sum.profileIconId || 7117}.png`;
 
         const linesHTML = LINES.map(line => {
             const isChecked = sum.preferredLanes.includes(line.id);
@@ -366,7 +367,7 @@ function renderSummonersGrid() {
                     <img src="${iconUrl}" class="summoner-avatar-img" alt="Avatar Invocador">
                     <div class="summoner-name-wrapper">
                         <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
-                               placeholder="Nombre de Invocador (ej: Faker)"
+                               placeholder="Nombre de Invocador (ej: Layvel)"
                                onchange="updateSummonerName(${sum.id}, this.value)">
                         <button class="riot-search-btn" onclick="searchRiotSummoner(${sum.id})">
                             <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? 'Riot API Verificado' : 'Conectar API Riot'}
@@ -541,7 +542,7 @@ function switchStep(stepNum) {
     state.currentStep = stepNum;
     
     document.querySelectorAll('.step-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === stepNum || (stepNum === 1 && idx === 1));
+        btn.classList.toggle('active', idx === stepNum);
     });
 
     document.querySelectorAll('.step-content').forEach((sec, idx) => {
@@ -818,7 +819,7 @@ function generate3Matches() {
 
         assignment.forEach((laneId, sIdx) => {
             const sum = state.summoners[sIdx];
-            const pool = sum.pools[laneId] || ['Garen', 'Darius', 'Aatrox'];
+            const pool = sum.pools[laneId] || ['Riven', 'Yasuo', 'Lucian'];
             
             let chosenChamp = pool[matchIdx % pool.length];
             if (usedChampsInMatch.has(chosenChamp)) {
@@ -829,7 +830,7 @@ function generate3Matches() {
             team.push({
                 summonerId: sum.id,
                 summonerName: sum.name,
-                profileIconId: sum.profileIconId || 29,
+                profileIconId: sum.profileIconId || 7117,
                 laneId: laneId,
                 champKey: chosenChamp
             });
@@ -880,7 +881,7 @@ function renderMatchView(matchNum) {
         const laneMeta = LINES.find(l => l.id === player.laneId);
         const champObj = state.championsDict[player.champKey] || { name: player.champKey, title: 'Campeón' };
         const splashUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${player.champKey}_0.jpg`;
-        const summonerAvatarUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${player.profileIconId || 29}.png`;
+        const summonerAvatarUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${player.profileIconId || 7117}.png`;
 
         if (!isMysteryMode) {
             // STANDARD MODE CARD

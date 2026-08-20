@@ -272,6 +272,22 @@ body.hextech-theme {
     gap: 1rem;
 }
 
+.region-select-input {
+    background: var(--bg-dark-void);
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-bright);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.region-select-input:focus {
+    outline: none;
+    border-color: var(--cyan-hextech);
+}
+
 @media (max-width: 700px) {
     .tester-input-bar {
         flex-direction: column;
@@ -300,6 +316,14 @@ body.hextech-theme {
     cursor: pointer;
     font-weight: 600;
     transition: all 0.2s ease;
+}
+
+.chip-btn.primary-chip {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+    border-color: var(--gold-bright);
+    color: var(--bg-dark-void);
+    font-weight: 800;
+    box-shadow: 0 0 10px var(--gold-glow);
 }
 
 .chip-btn:hover {
