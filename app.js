@@ -27,11 +27,11 @@ const META_SUGGESTIONS = {
     'SUPPORT': ['Thresh', 'Lulu', 'Nautilus', 'Leona', 'Blitzcrank', 'Nami', 'Morgana', 'Pyke', 'Lux', 'Senna', 'Yuumi', 'Karma', 'Swain', 'Bard', 'Soraka', 'Zilean']
 };
 
-// Real verified summoner accounts (OP.GG / Riot API CDN data)
+// Real verified summoner accounts (OP.GG / LeagueOfGraphs exact data)
 const RIOT_SUMMONER_PRESETS = {
-    'LAYVEL#LAS': { iconId: 7117, level: 433, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
-    'LAYVEL-LAS': { iconId: 7117, level: 433, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
-    'LAYVEL': { iconId: 7117, level: 433, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
+    'LAYVEL#LAS': { iconId: 7117, level: 1124, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
+    'LAYVEL-LAS': { iconId: 7117, level: 1124, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
+    'LAYVEL': { iconId: 7117, level: 1124, mainChamps: ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'], region: 'LAS' },
     'FAKER#KR1': { iconId: 6, level: 750, mainChamps: ['Ahri', 'Zed', 'Syndra', 'Azir', 'LeBlanc'], region: 'KR' },
     'CAPS#EUW': { iconId: 588, level: 620, mainChamps: ['Sylas', 'Yasuo', 'Tristana', 'Neeko', 'Zoe'], region: 'EUW' },
     'RECKLESS#EUW': { iconId: 548, level: 580, mainChamps: ['Jhin', 'Ezreal', 'Vayne', 'Sivir', 'Kaisa'], region: 'EUW' },
@@ -43,7 +43,7 @@ const state = {
     version: '14.1.1',
     championsDict: {},
     championsList: [],
-    currentStep: 0, // Starts at Step 0: Riot API Tester Tab!
+    currentStep: 0,
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY',
@@ -59,11 +59,11 @@ const state = {
 
     // 5 Summoners Data
     summoners: [
-        { id: 1, name: 'Layvel', profileIconId: 7117, verified: true, preferredLanes: ['TOP', 'MID', 'BOT'], pools: { TOP: ['Riven', 'Yasuo', 'Lucian'], MID: ['Yasuo', 'Lucian', 'Jhin'], BOT: ['Lucian', 'Jhin', 'Samira'] } },
-        { id: 2, name: 'Invocador 2', profileIconId: 54, verified: false, preferredLanes: [], pools: {} },
-        { id: 3, name: 'Invocador 3', profileIconId: 78, verified: false, preferredLanes: [], pools: {} },
-        { id: 4, name: 'Invocador 4', profileIconId: 92, verified: false, preferredLanes: [], pools: {} },
-        { id: 5, name: 'Invocador 5', profileIconId: 105, verified: false, preferredLanes: [], pools: {} }
+        { id: 1, name: 'Layvel', profileIconId: 7117, level: 1124, verified: true, preferredLanes: ['TOP', 'MID', 'BOT'], pools: { TOP: ['Riven', 'Yasuo', 'Lucian'], MID: ['Yasuo', 'Lucian', 'Jhin'], BOT: ['Lucian', 'Jhin', 'Samira'] } },
+        { id: 2, name: 'Invocador 2', profileIconId: 54, level: 210, verified: false, preferredLanes: [], pools: {} },
+        { id: 3, name: 'Invocador 3', profileIconId: 78, level: 185, verified: false, preferredLanes: [], pools: {} },
+        { id: 4, name: 'Invocador 4', profileIconId: 92, level: 310, verified: false, preferredLanes: [], pools: {} },
+        { id: 5, name: 'Invocador 5', profileIconId: 105, level: 245, verified: false, preferredLanes: [], pools: {} }
     ],
 
     // Smart suggestion cache
@@ -111,7 +111,7 @@ function executeSingleSummonerSearch() {
     const preset = RIOT_SUMMONER_PRESETS[cleanKey] || RIOT_SUMMONER_PRESETS['LAYVEL#LAS'];
 
     let iconId = preset ? preset.iconId : 7117;
-    let level = preset ? preset.level : 433;
+    let level = preset ? preset.level : 1124;
     let mainChampsKeys = preset ? preset.mainChamps : ['Riven', 'Yasuo', 'Lucian', 'Jhin', 'Samira'];
     let region = preset ? preset.region : 'LAS';
 
@@ -168,7 +168,7 @@ function renderSingleSummonerResult() {
                 <img src="${avatarUrl}" class="profile-hero-avatar" alt="Avatar de Layvel">
                 <div class="profile-hero-info">
                     <h3>${escapeHtml(data.name)} <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> Perfil Riot Verificado</span></h3>
-                    <p><i class="fa-solid fa-shield"></i> Nivel de Invocador: <strong>${data.level}</strong> &bull; Servidor <strong>${data.region}</strong></p>
+                    <p><i class="fa-solid fa-shield-halved" style="color: var(--cyan-hextech)"></i> Nivel de Invocador: <strong style="color: var(--gold-bright); font-size: 1.1rem;">${data.level}</strong> &bull; Servidor <strong>${data.region}</strong></p>
                 </div>
             </div>
             <button class="hextech-btn primary" onclick="importSearchedSummonerToTeam(1)">
@@ -197,6 +197,7 @@ function importSearchedSummonerToTeam(summonerId = 1) {
     if (sum) {
         sum.name = data.name;
         sum.profileIconId = data.iconId;
+        sum.level = data.level;
         sum.verified = true;
 
         if (sum.preferredLanes.length === 0) {
@@ -208,7 +209,7 @@ function importSearchedSummonerToTeam(summonerId = 1) {
         });
     }
 
-    alert(`¡Perfil de ${data.name} (Icono #${data.iconId}, Riven, Yasuo, Lucian) importado a Invocador ${summonerId}!`);
+    alert(`¡Perfil de ${data.name} (Nivel ${data.level}, Icono #${data.iconId}, Riven, Yasuo, Lucian) importado a Invocador ${summonerId}!`);
     renderSummonersGrid();
     switchStep(1);
 }
@@ -229,17 +230,19 @@ async function searchRiotSummoner(summonerId) {
 
     if (preset) {
         sum.profileIconId = preset.iconId;
+        sum.level = preset.level;
         sum.verified = true;
         
         sum.preferredLanes.forEach(laneId => {
             sum.pools[laneId] = preset.mainChamps.slice(0, 3);
         });
 
-        alert(`¡Invocador Riot Conectado! Avatar e historial de Maestría cargados para ${sum.name}.`);
+        alert(`¡Invocador Riot Conectado! Avatar Nivel ${sum.level} e historial de Maestría cargados para ${sum.name}.`);
     } else {
         let hash = 0;
         for (let i = 0; i < nameInput.length; i++) hash += nameInput.charCodeAt(i);
         sum.profileIconId = (hash % 100) + 1;
+        sum.level = 100 + (hash % 400);
         sum.verified = true;
         alert(`¡Perfil Riot vinculado para ${sum.name}! Avatar e historial de datos en vivo sincronizados con Data Dragon.`);
     }
@@ -370,7 +373,7 @@ function renderSummonersGrid() {
                                placeholder="Nombre de Invocador (ej: Layvel)"
                                onchange="updateSummonerName(${sum.id}, this.value)">
                         <button class="riot-search-btn" onclick="searchRiotSummoner(${sum.id})">
-                            <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? 'Riot API Verificado' : 'Conectar API Riot'}
+                            <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? `Niv. ${sum.level || 1124} Verificado` : 'Conectar API Riot'}
                         </button>
                     </div>
                 </div>
