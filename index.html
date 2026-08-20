@@ -30,12 +30,12 @@
         <div class="header-right">
             <!-- Mode Switcher -->
             <div class="mode-toggle-group">
-                <span class="mode-label">Modo:</span>
-                <button class="mode-btn active" id="modeStandard" onclick="setAppMode('STANDARD')">
-                    <i class="fa-solid fa-eye"></i> Estándar
-                </button>
-                <button class="mode-btn" id="modeMystery" onclick="setAppMode('MYSTERY')">
+                <span class="mode-label">Modo Tarjetas:</span>
+                <button class="mode-btn active" id="modeMystery" onclick="setAppMode('MYSTERY')">
                     <i class="fa-solid fa-box-open"></i> Revelación Misteriosa
+                </button>
+                <button class="mode-btn" id="modeStandard" onclick="setAppMode('STANDARD')">
+                    <i class="fa-solid fa-eye"></i> Revelado (Estándar)
                 </button>
             </div>
 
@@ -52,7 +52,7 @@
         <nav class="stepper-nav">
             <button class="step-btn active" id="tabStep1" onclick="switchStep(1)">
                 <span class="step-num">1</span>
-                <span class="step-label">Preferencias de Invocadores</span>
+                <span class="step-label">Invocadores y Líneas</span>
             </button>
             <button class="step-btn" id="tabStep2" onclick="switchStep(2)">
                 <span class="step-num">2</span>
@@ -69,7 +69,7 @@
             <div class="banner-main">
                 <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="banner-message" id="validationMessage">
-                    Selecciona manualmente las líneas preferidas para cada invocador...
+                    Ingresa los nombres de los 5 invocadores o elige sus líneas preferidas...
                 </div>
             </div>
             <div class="smart-suggestion-box" id="smartSuggestionBox" style="display: none;">
@@ -86,8 +86,19 @@
         <!-- STEP 1: SUMMONER LANE SELECTION -->
         <section class="step-content active" id="step1Content">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-users"></i> Configuración Libre de Invocadores</h2>
-                <p>Elige manualmente hasta 3 líneas preferidas por invocador. El sistema analizará en tiempo real qué posiciones faltan y te dará sugerencias para cubrir todas las líneas.</p>
+                <h2><i class="fa-solid fa-users"></i> Configuración de Invocadores</h2>
+                <p>Puedes ingresar solo los nombres de tus amigos y usar el <strong>Modo Rápido Aleatorio</strong>, o seleccionar manualmente las líneas de cada uno.</p>
+            </div>
+
+            <!-- Quick Random Draft Hero Banner -->
+            <div class="quick-random-hero-card">
+                <div class="hero-text">
+                    <h3><i class="fa-solid fa-dice"></i> Modo Rápido 100% Aleatorio</h3>
+                    <p>Escribe los nombres de los invocadores abajo y haz clic aquí para asignar líneas y campeones aleatorios al instante e ir directo al <strong>Modo Revelación Misteriosa</strong>.</p>
+                </div>
+                <button class="hextech-btn primary large-glow" onclick="executeQuickRandomDraft()">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> ¡Generar 3 Partidas Aleatorias!
+                </button>
             </div>
 
             <div class="summoners-grid" id="summonersGrid">
@@ -139,7 +150,7 @@
         <section class="step-content" id="step3Content">
             <div class="section-intro">
                 <h2><i class="fa-solid fa-gamepad"></i> Resultado de las 3 Partidas Generadas</h2>
-                <p id="step3Description">Cada jugador compite en una línea diferente en cada partida con su pool de campeones seleccionado.</p>
+                <p id="step3Description">🎲 Modo Revelación Misteriosa: Haz clic sobre cada carta para revelar el rol y campeón asignado a cada invocador.</p>
             </div>
 
             <div class="matches-tab-selector">
@@ -153,7 +164,7 @@
                     <i class="fa-solid fa-crown"></i> Partida 3
                 </button>
                 
-                <div class="mystery-controls" id="mysteryControlsBar" style="display: none;">
+                <div class="mystery-controls" id="mysteryControlsBar">
                     <button class="hextech-btn primary small" onclick="revealAllCardsInActiveMatch()">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Revelar Toda la Partida
                     </button>
@@ -193,8 +204,8 @@
             </div>
 
             <div class="action-bar">
-                <button class="hextech-btn secondary" onclick="switchStep(2)">
-                    <i class="fa-solid fa-arrow-left"></i> Cambiar Campeones
+                <button class="hextech-btn secondary" onclick="switchStep(1)">
+                    <i class="fa-solid fa-arrow-left"></i> Cambiar Nombres / Líneas
                 </button>
                 <button class="hextech-btn primary" onclick="exportDraftConfig()">
                     <i class="fa-solid fa-download"></i> Exportar Simulación (JSON)

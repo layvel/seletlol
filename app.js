@@ -27,7 +27,7 @@ const META_SUGGESTIONS = {
     'SUPPORT': ['Thresh', 'Lulu', 'Nautilus', 'Leona', 'Blitzcrank', 'Nami', 'Morgana', 'Pyke']
 };
 
-// Global App State
+// Global App State - Mystery Mode set as MAIN experience by default!
 const state = {
     version: '14.1.1',
     championsDict: {},
@@ -35,14 +35,14 @@ const state = {
     currentStep: 1,
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
-    appMode: 'STANDARD', // 'STANDARD' or 'MYSTERY'
+    appMode: 'MYSTERY', // 'MYSTERY' (Main Default) or 'STANDARD'
     
     // Modal state
     modalTarget: null,
     modalRoleFilter: 'ALL',
     modalSearchQuery: '',
 
-    // 5 Summoners Data - Default starting empty for 100% manual selection
+    // 5 Summoners Data
     summoners: [
         { id: 1, name: 'Invocador 1', preferredLanes: [], pools: {} },
         { id: 2, name: 'Invocador 2', preferredLanes: [], pools: {} },
@@ -76,7 +76,23 @@ async function initApp() {
     await loadRiotDataDragon();
 }
 
-// MODE SWITCHER (STANDARD vs MYSTERY REVEAL)
+// QUICK 1-CLICK RANDOM DRAFT
+function executeQuickRandomDraft() {
+    // 1. Assign 3 balanced random lines per summoner
+    presetStandardTeam();
+
+    // 2. Auto fill champions for all lines
+    autoFillRandomChampions(false);
+
+    // 3. Switch mode to Mystery Reveal
+    state.appMode = 'MYSTERY';
+    setAppMode('MYSTERY');
+
+    // 4. Generate 3 matches & proceed straight to Step 3 visualizer!
+    switchStep(3);
+}
+
+// MODE SWITCHER (MYSTERY vs STANDARD)
 function setAppMode(mode) {
     state.appMode = mode;
     
@@ -230,12 +246,10 @@ function validateLineCoverage() {
     const unselectedSummoners = state.summoners.filter(s => s.preferredLanes.length === 0);
     if (unselectedSummoners.length > 0) {
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas.`;
+        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas o usa el botón <strong>¡Generar 3 Partidas Aleatorias!</strong>.`;
         btnNext.disabled = true;
         return false;
     }
-
-    const incompleteSummoners = state.summoners.filter(s => s.preferredLanes.length < 3);
 
     // 2. Count coverage for each of the 5 roles
     const lineCounts = { TOP: 0, JUNGLE: 0, MID: 0, BOT: 0, SUPPORT: 0 };
@@ -251,7 +265,6 @@ function validateLineCoverage() {
         msg.innerHTML = `<strong>Faltan Líneas en el Equipo:</strong> Nadie ha seleccionado: <strong>${missingNames}</strong>.`;
         btnNext.disabled = true;
 
-        // Generate Smart Fix Suggestion
         const suggestion = generateSmartLineFix(missingLines);
         if (suggestion) {
             state.activeSuggestion = suggestion;
@@ -286,7 +299,6 @@ function validateLineCoverage() {
 }
 
 function generateSmartLineFix(missingLineIds) {
-    // Find summoners with < 3 selected lines
     const needySummoners = state.summoners.filter(s => s.preferredLanes.length < 3);
 
     if (needySummoners.length >= missingLineIds.length) {
@@ -314,7 +326,6 @@ function generateSmartLineFix(missingLineIds) {
         };
     }
 
-    // Fallback suggestion: preset standard balanced team
     return {
         description: `Autocompletar con la plantilla estándar equilibrada de 3 líneas por jugador.`,
         action: () => presetStandardTeam()

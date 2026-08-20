@@ -209,6 +209,53 @@ body.hextech-theme {
     gap: 1.5rem;
 }
 
+/* Quick Random Hero Banner Card */
+.quick-random-hero-card {
+    background: linear-gradient(135deg, rgba(10, 200, 185, 0.15), rgba(9, 20, 40, 0.95), rgba(200, 170, 110, 0.15));
+    border: 2px solid var(--gold-primary);
+    box-shadow: 0 0 25px rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .quick-random-hero-card {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+.quick-random-hero-card h3 {
+    font-family: var(--font-heading);
+    color: var(--gold-bright);
+    font-size: 1.4rem;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.quick-random-hero-card p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.hextech-btn.large-glow {
+    padding: 1.1rem 2.2rem;
+    font-size: 1rem;
+    white-space: nowrap;
+    animation: buttonPulseGlow 2s infinite alternate;
+}
+
+@keyframes buttonPulseGlow {
+    0% { box-shadow: 0 0 15px var(--gold-glow); }
+    100% { box-shadow: 0 0 35px var(--gold-primary); transform: scale(1.03); }
+}
+
 /* Stepper Navigation */
 .stepper-nav {
     display: flex;
@@ -767,7 +814,7 @@ body.hextech-theme {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
-    perspective: 1000px; /* For 3D card flip */
+    perspective: 1000px;
 }
 
 @media (max-width: 1100px) {
