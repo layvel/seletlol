@@ -119,6 +119,53 @@ body.hextech-theme {
     font-weight: 700;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.mode-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(1, 10, 19, 0.7);
+    padding: 0.3rem 0.5rem;
+    border-radius: 20px;
+    border: var(--border-dim);
+}
+
+.mode-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-left: 0.4rem;
+}
+
+.mode-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.3s ease;
+}
+
+.mode-btn.active {
+    background: var(--cyan-hextech);
+    color: var(--bg-dark-void);
+    font-weight: 800;
+    box-shadow: 0 0 10px var(--cyan-glow);
+}
+
 .api-status-badge {
     display: flex;
     align-items: center;
@@ -219,18 +266,24 @@ body.hextech-theme {
     font-weight: 800;
 }
 
-/* Validation Alert Banner */
+/* Validation Alert & Smart Suggestions Banner */
 .validation-banner {
     background: rgba(10, 20, 40, 0.95);
     border: 1px solid var(--cyan-hextech);
     border-left: 4px solid var(--cyan-hextech);
-    padding: 1rem 1.5rem;
-    border-radius: 4px;
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 1rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
+}
+
+.banner-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .validation-banner.valid {
@@ -256,6 +309,33 @@ body.hextech-theme {
 .banner-message {
     font-size: 0.95rem;
     line-height: 1.4;
+}
+
+/* Smart Suggestion Box */
+.smart-suggestion-box {
+    background: rgba(1, 10, 19, 0.7);
+    border: 1px dashed var(--gold-primary);
+    padding: 0.8rem 1.2rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.suggestion-header {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    color: var(--gold-bright);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggestion-content {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    flex: 1;
 }
 
 /* Step Content Sections */
@@ -430,6 +510,11 @@ body.hextech-theme {
     gap: 0.6rem;
     transition: all 0.3s ease;
     clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.hextech-btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
 }
 
 .hextech-btn.primary {
@@ -626,6 +711,13 @@ body.hextech-theme {
     display: flex;
     gap: 1rem;
     justify-content: center;
+    align-items: center;
+}
+
+.mystery-controls {
+    display: flex;
+    gap: 0.6rem;
+    margin-left: 1rem;
 }
 
 .match-tab-btn {
@@ -675,6 +767,7 @@ body.hextech-theme {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
+    perspective: 1000px; /* For 3D card flip */
 }
 
 @media (max-width: 1100px) {
@@ -689,24 +782,125 @@ body.hextech-theme {
     }
 }
 
+/* 3D FLIP CARD MYSTERY REVEAL */
 .player-match-card {
     height: 360px;
     border-radius: 6px;
-    border: 1px solid var(--gold-dark);
     position: relative;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Standard Mode Card */
+.player-match-card.standard-card {
+    border: 1px solid var(--gold-dark);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: 1rem;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.player-match-card:hover {
+.player-match-card.standard-card:hover {
     transform: translateY(-8px) scale(1.02);
     border-color: var(--cyan-hextech);
     box-shadow: 0 10px 25px var(--cyan-glow);
+}
+
+/* 3D Flip Container */
+.player-match-card.mystery-card {
+    background: transparent;
+    cursor: pointer;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.player-match-card.mystery-card.flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* Card Front (Mystery Hidden State) */
+.card-front {
+    background: linear-gradient(135deg, #091428, #010a13);
+    border: 2px solid var(--cyan-hextech);
+    box-shadow: 0 0 20px var(--cyan-glow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 1.5rem;
+}
+
+.card-front::before {
+    content: '';
+    position: absolute;
+    top: 10px; left: 10px; right: 10px; bottom: 10px;
+    border: 1px dashed rgba(10, 200, 185, 0.3);
+    pointer-events: none;
+}
+
+.mystery-icon-pulse {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--cyan-hextech), var(--cyan-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    color: #ffffff;
+    box-shadow: 0 0 25px var(--cyan-hextech);
+    animation: mysteryGlow 2s infinite alternate;
+}
+
+@keyframes mysteryGlow {
+    0% { transform: scale(0.95); box-shadow: 0 0 15px var(--cyan-glow); }
+    100% { transform: scale(1.08); box-shadow: 0 0 30px var(--cyan-hextech); }
+}
+
+.mystery-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: var(--gold-bright);
+    letter-spacing: 1px;
+}
+
+.mystery-prompt {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(10, 200, 185, 0.15);
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    border: 1px solid var(--cyan-hextech);
+}
+
+/* Card Back (Revealed Content) */
+.card-back {
+    transform: rotateY(180deg);
+    border: 1px solid var(--gold-dark);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+    text-align: left;
 }
 
 .player-match-card-bg {

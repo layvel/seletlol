@@ -35,23 +35,34 @@ const state = {
     currentStep: 1,
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
+    appMode: 'STANDARD', // 'STANDARD' or 'MYSTERY'
     
     // Modal state
-    modalTarget: null, // { summonerId, laneId, slotIndex }
+    modalTarget: null,
     modalRoleFilter: 'ALL',
     modalSearchQuery: '',
 
-    // 5 Summoners Data
+    // 5 Summoners Data - Default starting empty for 100% manual selection
     summoners: [
-        { id: 1, name: 'Invocador 1', preferredLanes: ['TOP', 'JUNGLE', 'MID'], pools: {} },
-        { id: 2, name: 'Invocador 2', preferredLanes: ['JUNGLE', 'MID', 'BOT'], pools: {} },
-        { id: 3, name: 'Invocador 3', preferredLanes: ['MID', 'BOT', 'SUPPORT'], pools: {} },
-        { id: 4, name: 'Invocador 4', preferredLanes: ['BOT', 'SUPPORT', 'TOP'], pools: {} },
-        { id: 5, name: 'Invocador 5', preferredLanes: ['SUPPORT', 'TOP', 'JUNGLE'], pools: {} }
+        { id: 1, name: 'Invocador 1', preferredLanes: [], pools: {} },
+        { id: 2, name: 'Invocador 2', preferredLanes: [], pools: {} },
+        { id: 3, name: 'Invocador 3', preferredLanes: [], pools: {} },
+        { id: 4, name: 'Invocador 4', preferredLanes: [], pools: {} },
+        { id: 5, name: 'Invocador 5', preferredLanes: [], pools: {} }
     ],
 
+    // Smart suggestion cache
+    activeSuggestion: null,
+
     // Generated 3 Matches Result
-    generatedMatches: null
+    generatedMatches: null,
+
+    // Track revealed mystery cards { matchNum: [bool, bool, bool, bool, bool] }
+    revealedCards: {
+        1: [false, false, false, false, false],
+        2: [false, false, false, false, false],
+        3: [false, false, false, false, false]
+    }
 };
 
 // INITIALIZATION
@@ -63,6 +74,29 @@ async function initApp() {
     renderSummonersGrid();
     validateLineCoverage();
     await loadRiotDataDragon();
+}
+
+// MODE SWITCHER (STANDARD vs MYSTERY REVEAL)
+function setAppMode(mode) {
+    state.appMode = mode;
+    
+    document.getElementById('modeStandard').classList.toggle('active', mode === 'STANDARD');
+    document.getElementById('modeMystery').classList.toggle('active', mode === 'MYSTERY');
+
+    const desc = document.getElementById('step3Description');
+    const mysteryBar = document.getElementById('mysteryControlsBar');
+
+    if (mode === 'MYSTERY') {
+        desc.textContent = '🎲 Modo Revelación Misteriosa: Haz clic sobre cada carta para revelar el rol y campeón asignado a cada invocador.';
+        mysteryBar.style.display = 'flex';
+    } else {
+        desc.textContent = 'Cada jugador compite en una línea diferente en cada partida con su pool de campeones seleccionado.';
+        mysteryBar.style.display = 'none';
+    }
+
+    if (state.generatedMatches) {
+        renderMatchView(state.activeMatchView);
+    }
 }
 
 // FETCH RIOT DATA DRAGON API
@@ -99,7 +133,7 @@ async function loadRiotDataDragon() {
     }
 }
 
-// STEP 1: RENDER SUMMONERS & LINES SELECTION
+// STEP 1: RENDER SUMMONERS & MANUAL LINES SELECTION
 function renderSummonersGrid() {
     const grid = document.getElementById('summonersGrid');
     grid.innerHTML = '';
@@ -160,14 +194,15 @@ function toggleSummonerLane(summonerId, laneId, isChecked) {
             sum.preferredLanes.push(laneId);
         }
     } else {
-        if (sum.preferredLanes.length <= 1) {
-            alert('Cada invocador debe tener al menos 1 línea seleccionada.');
-            renderSummonersGrid();
-            return;
-        }
         sum.preferredLanes = sum.preferredLanes.filter(l => l !== laneId);
     }
 
+    renderSummonersGrid();
+    validateLineCoverage();
+}
+
+function resetAllLanes() {
+    state.summoners.forEach(s => { s.preferredLanes = []; });
     renderSummonersGrid();
     validateLineCoverage();
 }
@@ -180,49 +215,116 @@ function presetStandardTeam() {
     validateLineCoverage();
 }
 
-// VALIDATION ENGINE FOR 3 MATCHES ROTATION
+// SMART VALIDATION & SUGGESTION ENGINE
 function validateLineCoverage() {
     const banner = document.getElementById('validationBanner');
     const msg = document.getElementById('validationMessage');
+    const suggestionBox = document.getElementById('smartSuggestionBox');
+    const suggestionText = document.getElementById('smartSuggestionText');
     const btnNext = document.getElementById('btnGoToStep2');
 
-    // 1. Check if all summoners selected exactly 3 lines
-    const incompleteSummoner = state.summoners.find(s => s.preferredLanes.length !== 3);
-    if (incompleteSummoner) {
+    state.activeSuggestion = null;
+    suggestionBox.style.display = 'none';
+
+    // 1. Check total selected lines per summoner
+    const unselectedSummoners = state.summoners.filter(s => s.preferredLanes.length === 0);
+    if (unselectedSummoners.length > 0) {
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Atención:</strong> ${incompleteSummoner.name} tiene ${incompleteSummoner.preferredLanes.length}/3 líneas elegidas. Cada invocador debe seleccionar exactamente 3 líneas.`;
+        msg.innerHTML = `<strong>Selección Incompleta:</strong> Quedan invocadores sin líneas seleccionadas (${unselectedSummoners.map(s=>s.name).join(', ')}). Cada invocador debe elegir hasta 3 líneas.`;
         btnNext.disabled = true;
         return false;
     }
 
-    // 2. Count total coverage for each of the 5 lines
+    const incompleteSummoners = state.summoners.filter(s => s.preferredLanes.length < 3);
+
+    // 2. Count coverage for each of the 5 roles
     const lineCounts = { TOP: 0, JUNGLE: 0, MID: 0, BOT: 0, SUPPORT: 0 };
     state.summoners.forEach(s => {
         s.preferredLanes.forEach(l => { lineCounts[l] = (lineCounts[l] || 0) + 1; });
     });
 
     const missingLines = Object.keys(lineCounts).filter(l => lineCounts[l] === 0);
+
     if (missingLines.length > 0) {
         const missingNames = missingLines.map(l => LINES.find(line => line.id === l).name).join(', ');
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Líneas no cubiertas:</strong> Nadie ha seleccionado: <strong>${missingNames}</strong>. Imposible armar 3 partidas. Ajusta las elecciones para cubrir todas las líneas.`;
+        msg.innerHTML = `<strong>Faltan Líneas en el Equipo:</strong> Nadie ha seleccionado: <strong>${missingNames}</strong>.`;
         btnNext.disabled = true;
+
+        // Generate Smart Fix Suggestion
+        const suggestion = generateSmartLineFix(missingLines);
+        if (suggestion) {
+            state.activeSuggestion = suggestion;
+            suggestionText.innerHTML = suggestion.description;
+            suggestionBox.style.display = 'flex';
+        }
         return false;
     }
 
-    // 3. Test 3-Match Assignment Algorithm
+    // 3. Test if 3-Match rotation schedule is solvable
     const schedule = solve3MatchesSchedule(state.summoners);
     if (!schedule) {
         banner.className = 'validation-banner invalid';
-        msg.innerHTML = `<strong>Combinación Compleja:</strong> Con las líneas actuales no es posible asignar a cada jugador 3 líneas distintas sin repetir posiciones por partida. Cambia 1 o 2 preferencias.`;
+        msg.innerHTML = `<strong>Conflicto de Rotación:</strong> Las elecciones actuales no permiten armar 3 partidas con 3 líneas distintas por jugador. Revisa la distribución.`;
         btnNext.disabled = true;
+
+        const presetFix = {
+            description: `Aplica la distribución estándar equilibrada automáticamente para resolver el conflicto.`,
+            action: () => presetStandardTeam()
+        };
+        state.activeSuggestion = presetFix;
+        suggestionText.innerHTML = presetFix.description;
+        suggestionBox.style.display = 'flex';
+
         return false;
     }
 
     banner.className = 'validation-banner valid';
-    msg.innerHTML = `<strong>¡Configuración Perfecta!</strong> Las 5 líneas están cubiertas y se han verificado 3 partidas distintas donde cada invocador jugará una línea diferente.`;
+    msg.innerHTML = `<strong>¡Configuración Válida!</strong> Las 5 líneas están cubiertas y se generarán 3 partidas donde cada invocador jugará líneas distintas.`;
     btnNext.disabled = false;
     return true;
+}
+
+function generateSmartLineFix(missingLineIds) {
+    // Find summoners with < 3 selected lines
+    const needySummoners = state.summoners.filter(s => s.preferredLanes.length < 3);
+
+    if (needySummoners.length >= missingLineIds.length) {
+        const assignments = [];
+        missingLineIds.forEach((missingLane, idx) => {
+            const sum = needySummoners[idx];
+            const laneMeta = LINES.find(l => l.id === missingLane);
+            assignments.push({ summonerId: sum.id, summonerName: sum.name, laneId: missingLane, laneName: laneMeta.name });
+        });
+
+        const desc = assignments.map(a => `Añadir <strong>${a.laneName}</strong> a ${a.summonerName}`).join(' y ');
+
+        return {
+            description: desc,
+            action: () => {
+                assignments.forEach(a => {
+                    const sum = state.summoners.find(s => s.id === a.summonerId);
+                    if (sum && !sum.preferredLanes.includes(a.laneId)) {
+                        sum.preferredLanes.push(a.laneId);
+                    }
+                });
+                renderSummonersGrid();
+                validateLineCoverage();
+            }
+        };
+    }
+
+    // Fallback suggestion: preset standard balanced team
+    return {
+        description: `Autocompletar con la plantilla estándar equilibrada de 3 líneas por jugador.`,
+        action: () => presetStandardTeam()
+    };
+}
+
+function applySmartSuggestion() {
+    if (state.activeSuggestion && state.activeSuggestion.action) {
+        state.activeSuggestion.action();
+    }
 }
 
 function validateStep1AndProceed() {
@@ -275,6 +377,11 @@ function renderChampPoolEditor() {
     if (!summoner) return;
 
     editor.innerHTML = '';
+
+    if (summoner.preferredLanes.length === 0) {
+        editor.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Este invocador no tiene líneas elegidas. Vuelve al Paso 1.</div>`;
+        return;
+    }
 
     summoner.preferredLanes.forEach(laneId => {
         const lineMeta = LINES.find(l => l.id === laneId);
@@ -337,7 +444,6 @@ function autoFillRandomChampions(userTriggered = true) {
             const candidates = META_SUGGESTIONS[laneId] || Object.keys(state.championsDict);
             const validCandidates = candidates.filter(key => state.championsDict[key]);
             
-            // Pick 3 unique champions
             const shuffled = [...validCandidates].sort(() => 0.5 - Math.random());
             s.pools[laneId] = shuffled.slice(0, 3);
         });
@@ -356,7 +462,6 @@ function openChampModal(summonerId, laneId, slotIndex) {
     const laneMeta = LINES.find(l => l.id === laneId);
     document.getElementById('modalTargetLabel').textContent = `${laneMeta.name} (${sum.name} - Opción ${slotIndex + 1})`;
 
-    // Reset filters
     state.modalRoleFilter = 'ALL';
     state.modalSearchQuery = '';
     document.getElementById('champSearchInput').value = '';
@@ -430,7 +535,6 @@ function selectChampionForModalTarget(champId) {
 }
 
 function validateStep2AndProceed() {
-    // Check if every summoner has filled all 3 champions for all 3 preferred lines
     for (const sum of state.summoners) {
         for (const laneId of sum.preferredLanes) {
             const pool = sum.pools[laneId];
@@ -450,13 +554,10 @@ function validateStep2AndProceed() {
 function solve3MatchesSchedule(summoners) {
     const roles = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
 
-    // All possible 1-match assignments (permutations of 5 roles to 5 summoners)
     const validMatchAssignments = [];
 
     function generatePermutations(arr, memo = []) {
         if (arr.length === 0) {
-            // Check if this assignment respects preferredLanes of each summoner
-            // memo[i] is role for summoners[i]
             const isValid = memo.every((role, sIdx) => summoners[sIdx].preferredLanes.includes(role));
             if (isValid) {
                 validMatchAssignments.push([...memo]);
@@ -473,26 +574,22 @@ function solve3MatchesSchedule(summoners) {
     generatePermutations(roles);
 
     if (validMatchAssignments.length < 3) {
-        return null; // Not enough valid match configurations
+        return null;
     }
 
-    // Now find 3 match assignments M1, M2, M3 such that for each summoner sIdx:
-    // M1[sIdx], M2[sIdx], M3[sIdx] are all distinct!
     for (let i = 0; i < validMatchAssignments.length; i++) {
         const m1 = validMatchAssignments[i];
         for (let j = 0; j < validMatchAssignments.length; j++) {
             if (i === j) continue;
             const m2 = validMatchAssignments[j];
-            // Check if M1 and M2 give distinct roles to every player
             if (!m1.every((role, sIdx) => role !== m2[sIdx])) continue;
 
             for (let k = 0; k < validMatchAssignments.length; k++) {
                 if (k === i || k === j) continue;
                 const m3 = validMatchAssignments[k];
-                // Check if M3 gives distinct roles from M1 and M2 for every player
                 const isValid3 = m1.every((role, sIdx) => m3[sIdx] !== role && m3[sIdx] !== m2[sIdx]);
                 if (isValid3) {
-                    return [m1, m2, m3]; // Success!
+                    return [m1, m2, m3];
                 }
             }
         }
@@ -510,7 +607,6 @@ function generate3Matches() {
         return;
     }
 
-    // Assign champions for each match without duplicating champions in the same match team if possible
     const matches = rawSchedule.map((assignment, matchIdx) => {
         const team = [];
         const usedChampsInMatch = new Set();
@@ -519,10 +615,8 @@ function generate3Matches() {
             const sum = state.summoners[sIdx];
             const pool = sum.pools[laneId] || ['Garen', 'Darius', 'Aatrox'];
             
-            // Pick champion from pool
             let chosenChamp = pool[matchIdx % pool.length];
             if (usedChampsInMatch.has(chosenChamp)) {
-                // Try alternative from pool
                 chosenChamp = pool.find(c => !usedChampsInMatch.has(c)) || chosenChamp;
             }
             usedChampsInMatch.add(chosenChamp);
@@ -535,7 +629,6 @@ function generate3Matches() {
             });
         });
 
-        // Sort team by standard LoL order: TOP, JUNGLE, MID, BOT, SUPPORT
         const roleOrder = { 'TOP': 1, 'JUNGLE': 2, 'MID': 3, 'BOT': 4, 'SUPPORT': 5 };
         team.sort((a, b) => roleOrder[a.laneId] - roleOrder[b.laneId]);
 
@@ -546,6 +639,13 @@ function generate3Matches() {
     });
 
     state.generatedMatches = matches;
+    
+    // Reset revealed state for Mystery Mode
+    state.revealedCards = {
+        1: [false, false, false, false, false],
+        2: [false, false, false, false, false],
+        3: [false, false, false, false, false]
+    };
 
     renderMatchView(state.activeMatchView);
     renderMatchesSummaryTable();
@@ -568,33 +668,77 @@ function renderMatchView(matchNum) {
     const matchData = state.generatedMatches.find(m => m.matchNumber === matchNum);
     if (!matchData) return;
 
-    const cardsHTML = matchData.team.map(player => {
+    const isMysteryMode = state.appMode === 'MYSTERY';
+
+    const cardsHTML = matchData.team.map((player, cardIdx) => {
         const laneMeta = LINES.find(l => l.id === player.laneId);
         const champObj = state.championsDict[player.champKey] || { name: player.champKey, title: 'Campeón' };
-        
         const splashUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${player.champKey}_0.jpg`;
 
-        return `
-            <div class="player-match-card">
-                <div class="player-match-card-bg" style="background-image: url('${splashUrl}')"></div>
-                <div class="player-match-card-overlay"></div>
+        if (!isMysteryMode) {
+            // STANDARD MODE CARD
+            return `
+                <div class="player-match-card standard-card">
+                    <div class="player-match-card-bg" style="background-image: url('${splashUrl}')"></div>
+                    <div class="player-match-card-overlay"></div>
 
-                <div class="card-top-content">
-                    <div class="lane-tag-badge">
-                        <i class="fa-solid ${laneMeta.icon}"></i> ${laneMeta.name}
+                    <div class="card-top-content">
+                        <div class="lane-tag-badge">
+                            <i class="fa-solid ${laneMeta.icon}"></i> ${laneMeta.name}
+                        </div>
+                        <div class="summoner-badge">P${matchNum}</div>
                     </div>
-                    <div class="summoner-badge">P${matchNum}</div>
-                </div>
 
-                <div class="card-bottom-content">
-                    <span class="champion-title-display">${champObj.title || ''}</span>
-                    <h4 class="champion-name-display">${champObj.name}</h4>
-                    <span class="summoner-name-display">
-                        <i class="fa-solid fa-user-astronaut"></i> ${escapeHtml(player.summonerName)}
-                    </span>
+                    <div class="card-bottom-content">
+                        <span class="champion-title-display">${champObj.title || ''}</span>
+                        <h4 class="champion-name-display">${champObj.name}</h4>
+                        <span class="summoner-name-display">
+                            <i class="fa-solid fa-user-astronaut"></i> ${escapeHtml(player.summonerName)}
+                        </span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // MYSTERY FLIP CARD MODE
+            const isFlipped = state.revealedCards[matchNum] && state.revealedCards[matchNum][cardIdx];
+
+            return `
+                <div class="player-match-card mystery-card ${isFlipped ? 'flipped' : ''}" 
+                     onclick="toggleMysteryCardFlip(${matchNum}, ${cardIdx})">
+                    <div class="card-inner">
+                        <!-- FRONT (HIDDEN) -->
+                        <div class="card-front">
+                            <div class="mystery-icon-pulse">
+                                <i class="fa-solid fa-gem"></i>
+                            </div>
+                            <span class="mystery-title">${escapeHtml(player.summonerName)}</span>
+                            <span class="mystery-prompt"><i class="fa-solid fa-hand-pointer"></i> Haz Clic para Revelar</span>
+                        </div>
+
+                        <!-- BACK (REVEALED) -->
+                        <div class="card-back">
+                            <div class="player-match-card-bg" style="background-image: url('${splashUrl}')"></div>
+                            <div class="player-match-card-overlay"></div>
+
+                            <div class="card-top-content">
+                                <div class="lane-tag-badge">
+                                    <i class="fa-solid ${laneMeta.icon}"></i> ${laneMeta.name}
+                                </div>
+                                <div class="summoner-badge">P${matchNum}</div>
+                            </div>
+
+                            <div class="card-bottom-content">
+                                <span class="champion-title-display">${champObj.title || ''}</span>
+                                <h4 class="champion-name-display">${champObj.name}</h4>
+                                <span class="summoner-name-display">
+                                    <i class="fa-solid fa-user-astronaut"></i> ${escapeHtml(player.summonerName)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
     }).join('');
 
     container.innerHTML = `
@@ -605,6 +749,26 @@ function renderMatchView(matchNum) {
             ${cardsHTML}
         </div>
     `;
+}
+
+function toggleMysteryCardFlip(matchNum, cardIdx) {
+    if (!state.revealedCards[matchNum]) {
+        state.revealedCards[matchNum] = [false, false, false, false, false];
+    }
+    state.revealedCards[matchNum][cardIdx] = !state.revealedCards[matchNum][cardIdx];
+    renderMatchView(matchNum);
+}
+
+function revealAllCardsInActiveMatch() {
+    const matchNum = state.activeMatchView;
+    state.revealedCards[matchNum] = [true, true, true, true, true];
+    renderMatchView(matchNum);
+}
+
+function resetMysteryCards() {
+    const matchNum = state.activeMatchView;
+    state.revealedCards[matchNum] = [false, false, false, false, false];
+    renderMatchView(matchNum);
 }
 
 function renderMatchesSummaryTable() {

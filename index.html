@@ -27,9 +27,22 @@
             </div>
         </div>
 
-        <div class="api-status-badge" id="apiStatusBadge">
-            <span class="pulse-dot"></span>
-            <span id="apiStatusText">Cargando Data Dragon API...</span>
+        <div class="header-right">
+            <!-- Mode Switcher -->
+            <div class="mode-toggle-group">
+                <span class="mode-label">Modo:</span>
+                <button class="mode-btn active" id="modeStandard" onclick="setAppMode('STANDARD')">
+                    <i class="fa-solid fa-eye"></i> Estándar
+                </button>
+                <button class="mode-btn" id="modeMystery" onclick="setAppMode('MYSTERY')">
+                    <i class="fa-solid fa-box-open"></i> Revelación Misteriosa
+                </button>
+            </div>
+
+            <div class="api-status-badge" id="apiStatusBadge">
+                <span class="pulse-dot"></span>
+                <span id="apiStatusText">Cargando Data Dragon API...</span>
+            </div>
         </div>
     </header>
 
@@ -51,19 +64,30 @@
             </button>
         </nav>
 
-        <!-- Validation Alert Banner -->
+        <!-- Validation Alert & Smart Suggestions Banner -->
         <div class="validation-banner" id="validationBanner">
-            <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div class="banner-message" id="validationMessage">
-                Verificando cobertura de líneas para las 3 partidas...
+            <div class="banner-main">
+                <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="banner-message" id="validationMessage">
+                    Selecciona manualmente las líneas preferidas para cada invocador...
+                </div>
+            </div>
+            <div class="smart-suggestion-box" id="smartSuggestionBox" style="display: none;">
+                <div class="suggestion-header">
+                    <i class="fa-solid fa-lightbulb"></i> Sugerencia Inteligente:
+                </div>
+                <div class="suggestion-content" id="smartSuggestionText"></div>
+                <button class="hextech-btn small secondary" onclick="applySmartSuggestion()">
+                    <i class="fa-solid fa-check-double"></i> Aplicar Sugerencia
+                </button>
             </div>
         </div>
 
         <!-- STEP 1: SUMMONER LANE SELECTION -->
         <section class="step-content active" id="step1Content">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-users"></i> Configuración del Equipo de Invocadores</h2>
-                <p>Cada invocador debe elegir <strong>3 líneas preferidas</strong>. El sistema comprobará en tiempo real que las 5 posiciones (TOP, JUNGLA, MID, BOT, SUPPORT) estén cubiertas para garantizar 3 partidas con líneas distintas para cada jugador.</p>
+                <h2><i class="fa-solid fa-users"></i> Configuración Libre de Invocadores</h2>
+                <p>Elige manualmente hasta 3 líneas preferidas por invocador. El sistema analizará en tiempo real qué posiciones faltan y te dará sugerencias para cubrir todas las líneas.</p>
             </div>
 
             <div class="summoners-grid" id="summonersGrid">
@@ -71,6 +95,9 @@
             </div>
 
             <div class="action-bar">
+                <button class="hextech-btn secondary" onclick="resetAllLanes()">
+                    <i class="fa-solid fa-rotate-left"></i> Limpiar Selecciones
+                </button>
                 <button class="hextech-btn secondary" onclick="presetStandardTeam()">
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Autocompletar Líneas Equilibradas
                 </button>
@@ -84,7 +111,7 @@
         <section class="step-content" id="step2Content">
             <div class="section-intro">
                 <h2><i class="fa-solid fa-trophy"></i> Selección de 3 Campeones por Línea</h2>
-                <p>Para cada invocador y sus 3 líneas elegidas, selecciona 3 campeones favoritos de la base de datos oficial de LoL.</p>
+                <p>Para cada invocador y sus líneas elegidas, selecciona 3 campeones favoritos de la base de datos oficial de LoL.</p>
             </div>
 
             <div class="summoner-champ-tabs" id="summonerChampTabs">
@@ -112,7 +139,7 @@
         <section class="step-content" id="step3Content">
             <div class="section-intro">
                 <h2><i class="fa-solid fa-gamepad"></i> Resultado de las 3 Partidas Generadas</h2>
-                <p>Cada jugador compite en una línea diferente en cada partida con su pool de campeones seleccionado.</p>
+                <p id="step3Description">Cada jugador compite en una línea diferente en cada partida con su pool de campeones seleccionado.</p>
             </div>
 
             <div class="matches-tab-selector">
@@ -125,6 +152,16 @@
                 <button class="match-tab-btn" id="matchTab3" onclick="switchMatchView(3)">
                     <i class="fa-solid fa-crown"></i> Partida 3
                 </button>
+                
+                <div class="mystery-controls" id="mysteryControlsBar" style="display: none;">
+                    <button class="hextech-btn primary small" onclick="revealAllCardsInActiveMatch()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Revelar Toda la Partida
+                    </button>
+                    <button class="hextech-btn secondary small" onclick="resetMysteryCards()">
+                        <i class="fa-solid fa-eye-slash"></i> Ocultar Cartas
+                    </button>
+                </div>
+
                 <button class="hextech-btn secondary icon-only" onclick="generate3Matches()" title="Regenerar Variación">
                     <i class="fa-solid fa-rotate"></i>
                 </button>
