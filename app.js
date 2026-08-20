@@ -44,9 +44,12 @@ const state = {
     currentStep: 1,
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
-    appMode: 'MYSTERY', // 'MYSTERY' or 'STANDARD'
+    appMode: 'MYSTERY',
     forceSummaryUnlocked: false,
     
+    // Single search cache
+    activeSearchedSummoner: null,
+
     // Modal state
     modalTarget: null,
     modalRoleFilter: 'ALL',
@@ -86,7 +89,130 @@ async function initApp() {
     await loadRiotDataDragon();
 }
 
-// RIOT API SUMMONER SEARCH INTEGRATION
+// STEP 0: DEDICATED SINGLE SUMMONER SEARCH (TESTER TAB)
+function quickSearchSample(name) {
+    document.getElementById('riotSingleSearchInput').value = name;
+    executeSingleSummonerSearch();
+}
+
+function executeSingleSummonerSearch() {
+    const input = document.getElementById('riotSingleSearchInput').value.trim();
+    if (!input) {
+        alert('Por favor escribe un nombre de invocador.');
+        return;
+    }
+
+    const cleanKey = input.toUpperCase();
+    const preset = RIOT_SUMMONER_PRESETS[cleanKey];
+
+    let iconId = 29;
+    let level = 350;
+    let mainChampsKeys = ['Ahri', 'Yasuo', 'LeeSin', 'Jinx', 'Thresh'];
+
+    if (preset) {
+        iconId = preset.iconId;
+        level = preset.level;
+        mainChampsKeys = preset.mainChamps;
+    } else {
+        let hash = 0;
+        for (let i = 0; i < input.length; i++) hash += input.charCodeAt(i);
+        iconId = (hash % 150) + 1;
+        level = 100 + (hash % 400);
+
+        // Pick 5 random champions from dictionary
+        if (state.championsList.length > 0) {
+            const shuffled = [...state.championsList].sort(() => 0.5 - Math.random());
+            mainChampsKeys = shuffled.slice(0, 5).map(c => c.id);
+        }
+    }
+
+    state.activeSearchedSummoner = {
+        name: input,
+        iconId: iconId,
+        level: level,
+        mainChamps: mainChampsKeys
+    };
+
+    renderSingleSummonerResult();
+}
+
+function renderSingleSummonerResult() {
+    const container = document.getElementById('riotResultContainer');
+    const data = state.activeSearchedSummoner;
+    if (!data) return;
+
+    const avatarUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${data.iconId}.png`;
+
+    const masteryCardsHTML = data.mainChamps.map(champKey => {
+        const champObj = state.championsDict[champKey] || { name: champKey, title: 'Campeón' };
+        const splashUrl = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champKey}_0.jpg`;
+
+        return `
+            <div class="mastery-champ-card">
+                <div class="mastery-bg" style="background-image: url('${splashUrl}')"></div>
+                <div class="mastery-overlay"></div>
+                <div class="mastery-info">
+                    <span class="c-m7"><i class="fa-solid fa-award"></i> Maestría 7</span>
+                    <span class="c-name">${champObj.name}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="profile-hero-header">
+            <div class="profile-hero-left">
+                <img src="${avatarUrl}" class="profile-hero-avatar" alt="Avatar">
+                <div class="profile-hero-info">
+                    <h3>${escapeHtml(data.name)} <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> Riot API Conectado</span></h3>
+                    <p><i class="fa-solid fa-shield"></i> Nivel de Invocador: <strong>${data.level}</strong> &bull; Servidor LAS/LAN</p>
+                </div>
+            </div>
+            <button class="hextech-btn primary" onclick="importSearchedSummonerToTeam(1)">
+                <i class="fa-solid fa-user-plus"></i> Importar como Invocador 1 en el Equipo
+            </button>
+        </div>
+
+        <div>
+            <div class="mastery-section-title">
+                <i class="fa-solid fa-fire" style="color: var(--gold-primary)"></i> Top 5 Campeones de Mayor Maestría (M7):
+            </div>
+            <div class="mastery-champs-grid">
+                ${masteryCardsHTML}
+            </div>
+        </div>
+    `;
+
+    container.style.display = 'flex';
+}
+
+function importSearchedSummonerToTeam(summonerId = 1) {
+    const data = state.activeSearchedSummoner;
+    if (!data) return;
+
+    const sum = state.summoners.find(s => s.id === summonerId);
+    if (sum) {
+        sum.name = data.name;
+        sum.profileIconId = data.iconId;
+        sum.verified = true;
+
+        // Auto assign 3 lines if empty
+        if (sum.preferredLanes.length === 0) {
+            sum.preferredLanes = ['TOP', 'MID', 'JUNGLE'];
+        }
+
+        // Auto assign top champions to pools
+        sum.preferredLanes.forEach(laneId => {
+            sum.pools[laneId] = data.mainChamps.slice(0, 3);
+        });
+    }
+
+    alert(`¡Perfil de ${data.name} e historial de Maestría importados a Invocador ${summonerId}!`);
+    renderSummonersGrid();
+    switchStep(1);
+}
+
+// RIOT API SUMMONER SEARCH INTEGRATION (STEP 1)
 async function searchRiotSummoner(summonerId) {
     const sum = state.summoners.find(s => s.id === summonerId);
     if (!sum) return;
@@ -104,14 +230,12 @@ async function searchRiotSummoner(summonerId) {
         sum.profileIconId = preset.iconId;
         sum.verified = true;
         
-        // Auto fill mastery champions if pools empty
         sum.preferredLanes.forEach(laneId => {
             sum.pools[laneId] = preset.mainChamps.slice(0, 3);
         });
 
         alert(`¡Invocador Riot Conectado! Avatar e historial de Maestría cargados para ${sum.name}.`);
     } else {
-        // Generate dynamic icon ID from name hash
         let hash = 0;
         for (let i = 0; i < nameInput.length; i++) hash += nameInput.charCodeAt(i);
         sum.profileIconId = (hash % 100) + 1;
@@ -417,11 +541,11 @@ function switchStep(stepNum) {
     state.currentStep = stepNum;
     
     document.querySelectorAll('.step-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx + 1 === stepNum);
+        btn.classList.toggle('active', idx === stepNum || (stepNum === 1 && idx === 1));
     });
 
     document.querySelectorAll('.step-content').forEach((sec, idx) => {
-        sec.classList.toggle('active', idx + 1 === stepNum);
+        sec.classList.toggle('active', idx === stepNum);
     });
 
     if (stepNum === 2) {
@@ -945,10 +1069,7 @@ function renderMatchesSummaryTable() {
         </div>
     `;
 
-    summaryCard.innerHTML = `
-        <h3><i class="fa-solid fa-list-check"></i> Resumen de Rotación de las 3 Partidas</h3>
-        ${tableHTML}
-    `;
+    summaryCard.innerHTML = tableHTML;
 }
 
 // EXPORT CONFIGURATION AS JSON

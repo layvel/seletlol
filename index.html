@@ -50,9 +50,13 @@
     <main class="main-container">
         <!-- Step Navigation Tabs -->
         <nav class="stepper-nav">
+            <button class="step-btn" id="tabStep0" onclick="switchStep(0)">
+                <span class="step-num"><i class="fa-solid fa-satellite-dish"></i></span>
+                <span class="step-label">Buscador Riot API</span>
+            </button>
             <button class="step-btn active" id="tabStep1" onclick="switchStep(1)">
                 <span class="step-num">1</span>
-                <span class="step-label">Invocadores y API Riot</span>
+                <span class="step-label">Invocadores y Líneas</span>
             </button>
             <button class="step-btn" id="tabStep2" onclick="switchStep(2)">
                 <span class="step-num">2</span>
@@ -69,7 +73,7 @@
             <div class="banner-main">
                 <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="banner-message" id="validationMessage">
-                    Busca invocadores por la API de Riot Games o ingresa sus nombres manualmente...
+                    Busca tu invocador en la pestaña **Buscador Riot API** o configura tus 5 invocadores...
                 </div>
             </div>
             <div class="smart-suggestion-box" id="smartSuggestionBox" style="display: none;">
@@ -83,11 +87,45 @@
             </div>
         </div>
 
+        <!-- STEP 0: DEDICATED RIOT API SUMMONER SEARCH TAB -->
+        <section class="step-content" id="step0Content">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-satellite-dish"></i> Probador & Buscador de Invocador Riot API</h2>
+                <p>Escribe **tu nombre de Invocador** o el de cualquier jugador profesional para consultar su Perfil en vivo, Avatar oficial y Campeones de Maestría M7.</p>
+            </div>
+
+            <div class="riot-api-tester-card">
+                <div class="tester-input-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-user-ninja"></i>
+                        <input type="text" id="riotSingleSearchInput" placeholder="Escribe tu Invocador (ej: Faker, Caps, Reckless, Keria o tu nombre)..." onkeypress="if(event.key==='Enter') executeSingleSummonerSearch()">
+                    </div>
+                    <button class="hextech-btn primary" onclick="executeSingleSummonerSearch()">
+                        <i class="fa-solid fa-magnifying-glass"></i> Consultar Riot API
+                    </button>
+                </div>
+
+                <div class="sample-chips-bar">
+                    <span class="chip-label">Prueba rápida con:</span>
+                    <button class="chip-btn" onclick="quickSearchSample('Faker')">Faker</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Caps')">Caps</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Reckless')">Reckless</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Keria')">Keria</button>
+                    <button class="chip-btn" onclick="quickSearchSample('Chovy')">Chovy</button>
+                </div>
+            </div>
+
+            <!-- Single Summoner Live Result Card -->
+            <div class="riot-result-container" id="riotResultContainer" style="display: none;">
+                <!-- Dynamically rendered profile & masteries -->
+            </div>
+        </section>
+
         <!-- STEP 1: SUMMONER LANE SELECTION -->
         <section class="step-content active" id="step1Content">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-users"></i> Configuración de Invocadores & Conexión Riot API</h2>
-                <p>Ingresa el <strong>Riot ID de Invocador</strong> para conectar sus datos reales (Avatar de perfil, Maestría M7) o usa la aleatoriedad rápida.</p>
+                <h2><i class="fa-solid fa-users"></i> Configuración del Equipo de Invocadores</h2>
+                <p>Puedes importar tu perfil de la pestaña **Buscador Riot API**, ingresar los nombres manualmente o usar el botón **¡Generar 3 Partidas Aleatorias!**.</p>
             </div>
 
             <!-- Quick Random Draft Hero Banner -->
