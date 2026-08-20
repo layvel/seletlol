@@ -36,6 +36,7 @@ const state = {
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY', // 'MYSTERY' (Main Default) or 'STANDARD'
+    forceSummaryUnlocked: false, // Manual unlock toggle for summary table
     
     // Modal state
     modalTarget: null,
@@ -78,17 +79,11 @@ async function initApp() {
 
 // QUICK 1-CLICK RANDOM DRAFT
 function executeQuickRandomDraft() {
-    // 1. Assign 3 balanced random lines per summoner
+    state.forceSummaryUnlocked = false;
     presetStandardTeam();
-
-    // 2. Auto fill champions for all lines
     autoFillRandomChampions(false);
-
-    // 3. Switch mode to Mystery Reveal
     state.appMode = 'MYSTERY';
     setAppMode('MYSTERY');
-
-    // 4. Generate 3 matches & proceed straight to Step 3 visualizer!
     switchStep(3);
 }
 
@@ -112,6 +107,7 @@ function setAppMode(mode) {
 
     if (state.generatedMatches) {
         renderMatchView(state.activeMatchView);
+        renderMatchesSummaryTable();
     }
 }
 
@@ -124,12 +120,10 @@ async function loadRiotDataDragon() {
     try {
         badgeText.textContent = 'Conectando a Riot Data Dragon...';
         
-        // 1. Fetch versions
         const verResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
         const versions = await verResponse.json();
         state.version = versions[0] || '14.1.1';
 
-        // 2. Fetch champions list in es_ES
         const champResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${state.version}/data/es_ES/champion.json`);
         const champData = await champResponse.json();
         
@@ -139,7 +133,6 @@ async function loadRiotDataDragon() {
         pulseDot.classList.add('online');
         badgeText.textContent = `Data Dragon v${state.version} (${state.championsList.length} Campeones)`;
         
-        // Auto initialize default champion pools
         autoFillRandomChampions(false);
 
     } catch (err) {
@@ -242,7 +235,6 @@ function validateLineCoverage() {
     state.activeSuggestion = null;
     suggestionBox.style.display = 'none';
 
-    // 1. Check total selected lines per summoner
     const unselectedSummoners = state.summoners.filter(s => s.preferredLanes.length === 0);
     if (unselectedSummoners.length > 0) {
         banner.className = 'validation-banner invalid';
@@ -251,7 +243,6 @@ function validateLineCoverage() {
         return false;
     }
 
-    // 2. Count coverage for each of the 5 roles
     const lineCounts = { TOP: 0, JUNGLE: 0, MID: 0, BOT: 0, SUPPORT: 0 };
     state.summoners.forEach(s => {
         s.preferredLanes.forEach(l => { lineCounts[l] = (lineCounts[l] || 0) + 1; });
@@ -274,7 +265,6 @@ function validateLineCoverage() {
         return false;
     }
 
-    // 3. Test if 3-Match rotation schedule is solvable
     const schedule = solve3MatchesSchedule(state.summoners);
     if (!schedule) {
         banner.className = 'validation-banner invalid';
@@ -650,6 +640,7 @@ function generate3Matches() {
     });
 
     state.generatedMatches = matches;
+    state.forceSummaryUnlocked = false;
     
     // Reset revealed state for Mystery Mode
     state.revealedCards = {
@@ -768,29 +759,82 @@ function toggleMysteryCardFlip(matchNum, cardIdx) {
     }
     state.revealedCards[matchNum][cardIdx] = !state.revealedCards[matchNum][cardIdx];
     renderMatchView(matchNum);
+    renderMatchesSummaryTable();
 }
 
 function revealAllCardsInActiveMatch() {
     const matchNum = state.activeMatchView;
     state.revealedCards[matchNum] = [true, true, true, true, true];
     renderMatchView(matchNum);
+    renderMatchesSummaryTable();
 }
 
 function resetMysteryCards() {
     const matchNum = state.activeMatchView;
     state.revealedCards[matchNum] = [false, false, false, false, false];
     renderMatchView(matchNum);
+    renderMatchesSummaryTable();
+}
+
+function forceRevealSummaryTable() {
+    state.forceSummaryUnlocked = true;
+    renderMatchesSummaryTable();
+}
+
+// CHECK IF ALL CARDS ACROSS ALL 3 MATCHES ARE REVEALED
+function areAllCardsRevealedAcrossAllMatches() {
+    if (state.appMode === 'STANDARD' || state.forceSummaryUnlocked) return true;
+    for (let m = 1; m <= 3; m++) {
+        const matchRevealed = state.revealedCards[m];
+        if (!matchRevealed || matchRevealed.length < 5 || matchRevealed.some(r => !r)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function renderMatchesSummaryTable() {
     const tbody = document.getElementById('matchesSummaryTbody');
+    const summaryCard = document.querySelector('.matches-summary-card');
     if (!state.generatedMatches) return;
 
-    tbody.innerHTML = '';
+    const isFullyUnlocked = areAllCardsRevealedAcrossAllMatches();
+
+    if (!isFullyUnlocked) {
+        // Render Anti-Spoiler Locked State
+        summaryCard.innerHTML = `
+            <div class="summary-locked-banner" style="text-align: center; padding: 1.5rem; background: rgba(1, 10, 19, 0.7); border: 1px dashed var(--gold-primary); border-radius: 6px;">
+                <div style="font-size: 2rem; color: var(--gold-primary); margin-bottom: 0.5rem;"><i class="fa-solid fa-lock"></i></div>
+                <h3 style="font-family: var(--font-heading); color: var(--gold-bright); margin-bottom: 0.4rem;">Resumen de Rotación Oculto (Anti-Spoilers)</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    El resumen completo de las 3 partidas se revelará automáticamente una vez que hayas descubierto todas las cartas misteriosas de las Partidas 1, 2 y 3.
+                </p>
+                <button class="hextech-btn small secondary" onclick="forceRevealSummaryTable()">
+                    <i class="fa-solid fa-eye"></i> Revelar Resumen Ahora
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    // Render Full Unlocked Summary Table
+    let tableHTML = `
+        <h3><i class="fa-solid fa-list-check"></i> Resumen de Rotación de las 3 Partidas</h3>
+        <div class="table-responsive">
+            <table class="hextech-table" id="matchesSummaryTable">
+                <thead>
+                    <tr>
+                        <th>Invocador</th>
+                        <th>Partida 1 (Línea / Campeón)</th>
+                        <th>Partida 2 (Línea / Campeón)</th>
+                        <th>Partida 3 (Línea / Campeón)</th>
+                        <th>Diversidad</th>
+                    </tr>
+                </thead>
+                <tbody id="matchesSummaryTbody">
+    `;
 
     state.summoners.forEach(sum => {
-        const tr = document.createElement('tr');
-
         const m1 = state.generatedMatches[0].team.find(p => p.summonerId === sum.id);
         const m2 = state.generatedMatches[1].team.find(p => p.summonerId === sum.id);
         const m3 = state.generatedMatches[2].team.find(p => p.summonerId === sum.id);
@@ -807,15 +851,24 @@ function renderMatchesSummaryTable() {
             ? `<span style="color: var(--status-success); font-weight: 700;"><i class="fa-solid fa-circle-check"></i> 3 Líneas Distintas</span>`
             : `<span style="color: var(--status-warning);">${playedLanes.size} Líneas</span>`;
 
-        tr.innerHTML = `
-            <td><strong>${escapeHtml(sum.name)}</strong></td>
-            <td>${getCellHTML(m1)}</td>
-            <td>${getCellHTML(m2)}</td>
-            <td>${getCellHTML(m3)}</td>
-            <td>${diversityBadge}</td>
+        tableHTML += `
+            <tr>
+                <td><strong>${escapeHtml(sum.name)}</strong></td>
+                <td>${getCellHTML(m1)}</td>
+                <td>${getCellHTML(m2)}</td>
+                <td>${getCellHTML(m3)}</td>
+                <td>${diversityBadge}</td>
+            </tr>
         `;
-        tbody.appendChild(tr);
     });
+
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    summaryCard.innerHTML = tableHTML;
 }
 
 // EXPORT CONFIGURATION AS JSON
