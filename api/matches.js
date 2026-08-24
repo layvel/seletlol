@@ -1,52 +1,10 @@
 // Vercel Serverless Function for Team Match History Sync
 // Storage endpoint using Cloud KV / Firebase REST fallback for real-time team sharing
 
-// In-memory fallback cache for fast response
+// In-memory fallback cache for fast response (100% blank clean state)
 let memoryStorage = {
-    matches: [
-        {
-            id: "match-sample-1",
-            date: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-            duration: "28:15",
-            result: "VICTORY",
-            notes: "Excelente control de dragones y buena rotación en Mid Game. Riven y Yasuo hicieron buen combo en TF.",
-            players: [
-                { summonerName: "Layvel", lane: "TOP", champion: "Riven", kills: 12, deaths: 3, assists: 8 },
-                { summonerName: "Invocador 2", lane: "JUNGLE", champion: "JarvanIV", kills: 4, deaths: 2, assists: 15 },
-                { summonerName: "Invocador 3", lane: "MID", champion: "Yasuo", kills: 9, deaths: 4, assists: 10 },
-                { summonerName: "Invocador 4", lane: "BOT", champion: "Jhin", kills: 8, deaths: 1, assists: 11 },
-                { summonerName: "Invocador 5", lane: "SUPPORT", champion: "Thresh", kills: 2, deaths: 3, assists: 18 }
-            ]
-        },
-        {
-            id: "match-sample-2",
-            date: new Date(Date.now() - 3600000 * 24).toISOString(),
-            duration: "34:40",
-            result: "DEFEAT",
-            notes: "Nos faltó visión en Baron al minuto 30. Hay que mejorar la comunicación del Support y Jungla.",
-            players: [
-                { summonerName: "Layvel", lane: "TOP", champion: "Aatrox", kills: 6, deaths: 7, assists: 4 },
-                { summonerName: "Invocador 2", lane: "JUNGLE", champion: "LeeSin", kills: 3, deaths: 6, assists: 8 },
-                { summonerName: "Invocador 3", lane: "MID", champion: "Ahri", kills: 7, deaths: 5, assists: 6 },
-                { summonerName: "Invocador 4", lane: "BOT", champion: "Kaisa", kills: 9, deaths: 6, assists: 3 },
-                { summonerName: "Invocador 5", lane: "SUPPORT", champion: "Nautilus", kills: 1, deaths: 8, assists: 10 }
-            ]
-        },
-        {
-            id: "match-sample-3",
-            date: new Date().toISOString(),
-            duration: "24:10",
-            result: "VICTORY",
-            notes: "Dominio total de bot lane desde nivel 2. Buen peel de Nautilus y ejecuciones rápidas.",
-            players: [
-                { summonerName: "Layvel", lane: "TOP", champion: "Fiora", kills: 8, deaths: 2, assists: 5 },
-                { summonerName: "Invocador 2", lane: "JUNGLE", champion: "Viego", kills: 10, deaths: 3, assists: 7 },
-                { summonerName: "Invocador 3", lane: "MID", champion: "Syndra", kills: 6, deaths: 1, assists: 9 },
-                { summonerName: "Invocador 4", lane: "BOT", champion: "Samira", kills: 14, deaths: 2, assists: 6 },
-                { summonerName: "Invocador 5", lane: "SUPPORT", champion: "Leona", kills: 1, deaths: 3, assists: 17 }
-            ]
-        }
-    ],
+    matches: [],
+    summoners: [],
     lastUpdated: new Date().toISOString()
 };
 

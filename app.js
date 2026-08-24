@@ -1,5 +1,6 @@
 /* ===================================================
    LEAGUE OF LEGENDS - SQUAD TRACKER & ANALYTICS
+   (100% BLANK INITIAL STATE & ZERO RESTRICTIONS)
    =================================================== */
 
 const LINES = [
@@ -10,25 +11,24 @@ const LINES = [
     { id: 'SUPPORT', name: 'Soporte', icon: 'fa-heart', roleFilter: 'Support' }
 ];
 
-// Meta suggested champions by line
+// Suggested champions by line for quick reference
 const META_SUGGESTIONS = {
-    'TOP': ['Riven', 'Aatrox', 'Fiora', 'Darius', 'Jax', 'Garen', 'Sett', 'Camille', 'Mordekaiser', 'Volibear'],
-    'JUNGLE': ['LeeSin', 'JarvanIV', 'Viego', 'XinZhao', 'KhaZix', 'Elise', 'Graves', 'Warwick', 'Amumu', 'Kayn'],
-    'MID': ['Yasuo', 'Ahri', 'Syndra', 'Zed', 'Yone', 'Lux', 'Akali', 'Vex', 'Katarina', 'Orianna'],
-    'BOT': ['Jhin', 'Kaisa', 'Samira', 'Ezreal', 'Jinx', 'Caitlyn', 'Vayne', 'Lucian', 'Ashe', 'MissFortune'],
-    'SUPPORT': ['Thresh', 'Nautilus', 'Leona', 'Lulu', 'Blitzcrank', 'Nami', 'Pyke', 'Morgana', 'Braum', 'Senna']
+    'TOP': ['Aatrox', 'Darius', 'Fiora', 'Garen', 'Jax', 'Mordekaiser', 'Renekton', 'Riven', 'Sett', 'Volibear'],
+    'JUNGLE': ['Amumu', 'Elise', 'Graves', 'JarvanIV', 'Kayn', 'KhaZix', 'LeeSin', 'Viego', 'Warwick', 'XinZhao'],
+    'MID': ['Ahri', 'Akali', 'Katarina', 'Lux', 'Orianna', 'Syndra', 'Vex', 'Yasuo', 'Yone', 'Zed'],
+    'BOT': ['Ashe', 'Caitlyn', 'Ezreal', 'Jhin', 'Jinx', 'Kaisa', 'Lucian', 'MissFortune', 'Samira', 'Vayne'],
+    'SUPPORT': ['Blitzcrank', 'Braum', 'Leona', 'Lulu', 'Morgana', 'Nami', 'Nautilus', 'Pyke', 'Senna', 'Thresh']
 };
 
-// Global App State
+// Global App State - Starts 100% Clean / Blank
 const state = {
     version: '14.1.1',
     championsDict: {},
     championsList: [],
     currentStep: 'roster', // 'roster', 'history', 'analytics'
     
-    // Cloud Sync & Filter state
+    // Filters & status
     historyFilterResult: 'ALL',
-    historySearchQuery: '',
     cloudSyncStatus: 'online',
 
     // Modal Target state for Champion Picker
@@ -37,153 +37,11 @@ const state = {
     modalRoleFilter: 'ALL',
     modalSearchQuery: '',
 
-    // Dynamic 5 to 7 Friends Roster with Champion Pools per Line
-    summoners: [
-        {
-            id: 1,
-            name: 'Layvel#LAS',
-            profileIconId: 7117,
-            level: 1124,
-            verified: true,
-            preferredLanes: ['TOP', 'MID', 'BOT'],
-            pools: {
-                'TOP': ['Riven', 'Aatrox', 'Fiora'],
-                'MID': ['Yasuo', 'Ahri', 'Zed'],
-                'BOT': ['Lucian', 'Jhin', 'Samira']
-            }
-        },
-        {
-            id: 2,
-            name: 'Invocador 2',
-            profileIconId: 54,
-            level: 759,
-            verified: false,
-            preferredLanes: ['JUNGLE', 'MID', 'BOT'],
-            pools: {
-                'JUNGLE': ['LeeSin', 'JarvanIV', 'Viego'],
-                'MID': ['Syndra', 'Ahri'],
-                'BOT': ['Ezreal', 'Jinx']
-            }
-        },
-        {
-            id: 3,
-            name: 'Invocador 3',
-            profileIconId: 78,
-            level: 388,
-            verified: false,
-            preferredLanes: ['MID', 'BOT', 'SUPPORT'],
-            pools: {
-                'MID': ['Yasuo', 'Syndra', 'Lux'],
-                'BOT': ['Kaisa', 'Vayne'],
-                'SUPPORT': ['Thresh', 'Nautilus']
-            }
-        },
-        {
-            id: 4,
-            name: 'Invocador 4',
-            profileIconId: 92,
-            level: 424,
-            verified: false,
-            preferredLanes: ['TOP', 'BOT', 'SUPPORT'],
-            pools: {
-                'TOP': ['Darius', 'Garen', 'Jax'],
-                'BOT': ['Jhin', 'Samira', 'Caitlyn'],
-                'SUPPORT': ['Leona', 'Lulu']
-            }
-        },
-        {
-            id: 5,
-            name: 'Invocador 5',
-            profileIconId: 105,
-            level: 462,
-            verified: false,
-            preferredLanes: ['TOP', 'JUNGLE', 'SUPPORT'],
-            pools: {
-                'TOP': ['Mordekaiser', 'Volibear'],
-                'JUNGLE': ['Warwick', 'XinZhao'],
-                'SUPPORT': ['Thresh', 'Nautilus', 'Leona']
-            }
-        },
-        {
-            id: 6,
-            name: 'Invocador 6',
-            profileIconId: 120,
-            level: 350,
-            verified: false,
-            preferredLanes: ['JUNGLE', 'SUPPORT'],
-            pools: {
-                'JUNGLE': ['Amumu', 'Kayn'],
-                'SUPPORT': ['Blitzcrank', 'Nami']
-            }
-        },
-        {
-            id: 7,
-            name: 'Invocador 7',
-            profileIconId: 135,
-            level: 280,
-            verified: false,
-            preferredLanes: ['TOP', 'MID'],
-            pools: {
-                'TOP': ['Sett', 'Aatrox'],
-                'MID': ['Yone', 'Katarina']
-            }
-        }
-    ],
+    // 100% Blank dynamic summoner roster
+    summoners: [],
 
-    // Rich Sample Match History featuring Duos, Trios and 5-man premades
-    matchesHistory: [
-        {
-            id: "match-sample-1",
-            date: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-            duration: "28:15",
-            result: "VICTORY",
-            notes: "Excelente control de dragones y buena rotación en Mid Game. Riven y Yasuo hicieron un combo devastador en la pelea de Baron.",
-            players: [
-                { summonerName: "Layvel#LAS", lane: "TOP", champion: "Riven", kills: 12, deaths: 3, assists: 8 },
-                { summonerName: "Invocador 2", lane: "JUNGLE", champion: "JarvanIV", kills: 4, deaths: 2, assists: 15 },
-                { summonerName: "Invocador 3", lane: "MID", champion: "Yasuo", kills: 9, deaths: 4, assists: 10 },
-                { summonerName: "Invocador 4", lane: "BOT", champion: "Jhin", kills: 8, deaths: 1, assists: 11 },
-                { summonerName: "Invocador 5", lane: "SUPPORT", champion: "Thresh", kills: 2, deaths: 3, assists: 18 }
-            ]
-        },
-        {
-            id: "match-sample-2",
-            date: new Date(Date.now() - 3600000 * 24).toISOString(),
-            duration: "34:40",
-            result: "DEFEAT",
-            notes: "Nos faltó visión en Baron al minuto 30. Hay que mejorar la comunicación entre Support y Jungla cuando el enemigo tenga ventaja de visión.",
-            players: [
-                { summonerName: "Layvel#LAS", lane: "TOP", champion: "Aatrox", kills: 6, deaths: 7, assists: 4 },
-                { summonerName: "Invocador 2", lane: "JUNGLE", champion: "LeeSin", kills: 3, deaths: 6, assists: 8 },
-                { summonerName: "Invocador 3", lane: "MID", champion: "Ahri", kills: 7, deaths: 5, assists: 6 },
-                { summonerName: "Invocador 4", lane: "BOT", champion: "Kaisa", kills: 9, deaths: 6, assists: 3 },
-                { summonerName: "Invocador 5", lane: "SUPPORT", champion: "Nautilus", kills: 1, deaths: 8, assists: 10 }
-            ]
-        },
-        {
-            id: "match-sample-3",
-            date: new Date(Date.now() - 3600000 * 8).toISOString(),
-            duration: "26:10",
-            result: "VICTORY",
-            notes: "Partida en Dúo (Layvel + Invocador 3). Dominio total de top y mid desde nivel 3 con ganks coordinados.",
-            players: [
-                { summonerName: "Layvel#LAS", lane: "TOP", champion: "Fiora", kills: 11, deaths: 2, assists: 6 },
-                { summonerName: "Invocador 3", lane: "MID", champion: "Yasuo", kills: 10, deaths: 3, assists: 8 }
-            ]
-        },
-        {
-            id: "match-sample-4",
-            date: new Date().toISOString(),
-            duration: "24:50",
-            result: "VICTORY",
-            notes: "Trío premade (Layvel, Invocador 2 e Invocador 4). Excelente iniciación y snowball temprano.",
-            players: [
-                { summonerName: "Layvel#LAS", lane: "BOT", champion: "Lucian", kills: 14, deaths: 2, assists: 7 },
-                { summonerName: "Invocador 2", lane: "JUNGLE", champion: "Viego", kills: 8, deaths: 3, assists: 10 },
-                { summonerName: "Invocador 4", lane: "SUPPORT", champion: "Leona", kills: 2, deaths: 3, assists: 16 }
-            ]
-        }
-    ]
+    // 100% Blank match history
+    matchesHistory: []
 };
 
 // INITIALIZATION
@@ -203,7 +61,7 @@ function loadLocalRosterAndHistory() {
     if (savedRoster) {
         try {
             const parsed = JSON.parse(savedRoster);
-            if (Array.isArray(parsed) && parsed.length >= 2) {
+            if (Array.isArray(parsed)) {
                 state.summoners = parsed;
             }
         } catch (e) {}
@@ -213,14 +71,14 @@ function loadLocalRosterAndHistory() {
     if (savedHistory) {
         try {
             const parsedH = JSON.parse(savedHistory);
-            if (Array.isArray(parsedH) && parsedH.length > 0) {
+            if (Array.isArray(parsedH)) {
                 state.matchesHistory = parsedH;
             }
         } catch (e) {}
     }
 }
 
-// LOAD RIOT DATA DRAGON API
+// LOAD RIOT DATA DRAGON API (CHAMPIONS DATABASE)
 async function loadRiotDataDragon() {
     const badgeText = document.getElementById('cloudStatusText');
     try {
@@ -274,7 +132,7 @@ function switchStep(stepKey) {
 }
 
 /* ===================================================
-   SECTION 1: SUMMONERS ROSTER & CHAMPION POOLS PER LANE
+   SECTION 1: SQUAD ROSTER (NO RESTRICTIONS)
    =================================================== */
 
 function renderSummonersGrid() {
@@ -282,15 +140,32 @@ function renderSummonersGrid() {
     if (!grid) return;
     grid.innerHTML = '';
 
+    if (state.summoners.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: rgba(9,20,40,0.6); border: 1px dashed var(--gold-dark); border-radius: 8px;">
+                <i class="fa-solid fa-users-gear" style="font-size: 3rem; color: var(--gold-primary); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--gold-bright); font-family: var(--font-heading); margin-bottom: 0.5rem;">Plantilla en Blanco</h3>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 1.5rem auto;">
+                    Añade a cada uno de tus amigos. Podrás escribir su nombre/Riot ID, elegir libremente cuántas líneas prefieren jugar y armar su lista de campeones por rol sin límites.
+                </p>
+                <button class="hextech-btn primary large-glow" onclick="addNewSummonerToRoster()">
+                    <i class="fa-solid fa-user-plus"></i> + Agregar Invocador a Plantilla
+                </button>
+            </div>
+        `;
+        return;
+    }
+
     state.summoners.forEach(sum => {
         if (!sum.pools) sum.pools = {};
+        if (!sum.preferredLanes) sum.preferredLanes = [];
 
         const card = document.createElement('div');
         card.className = 'summoner-card';
 
         const iconUrl = `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/profileicon/${sum.profileIconId || 7117}.png`;
 
-        // 1. Line Checkboxes
+        // 1. Line Checkboxes (NO LIMIT ON SELECTION)
         const linesHTML = LINES.map(line => {
             const isChecked = sum.preferredLanes.includes(line.id);
             return `
@@ -307,10 +182,10 @@ function renderSummonersGrid() {
             `;
         }).join('');
 
-        // 2. Champion Pools Blocks for Active Lines
+        // 2. Champion Pools Blocks for Active Lines (NO RESTRICTION ON CHAMPIONS)
         let poolsHTML = '';
         if (sum.preferredLanes.length === 0) {
-            poolsHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">Selecciona al menos una línea arriba para definir su pool de campeones.</p>`;
+            poolsHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">Marca arriba las líneas de preferencia de este amigo para asignarle campeones.</p>`;
         } else {
             poolsHTML = sum.preferredLanes.map(lineId => {
                 const lineMeta = LINES.find(l => l.id === lineId) || { name: lineId, icon: 'fa-shield' };
@@ -331,42 +206,43 @@ function renderSummonersGrid() {
                 return `
                     <div class="lane-pool-block">
                         <div class="lane-pool-header">
-                            <span><i class="fa-solid ${lineMeta.icon}"></i> Pool para ${lineMeta.name}</span>
+                            <span><i class="fa-solid ${lineMeta.icon}"></i> Pool de ${lineMeta.name}</span>
                             <button class="add-champ-to-lane-btn" onclick="openChampPickerForLane(${sum.id}, '${lineId}')">
                                 <i class="fa-solid fa-plus"></i> Añadir Campeón
                             </button>
                         </div>
                         <div class="lane-pool-chips">
-                            ${champChipsHTML.length > 0 ? champChipsHTML : '<span style="font-size:0.75rem; color:var(--text-muted);">Sin campeones asignados. Pulsa Añadir.</span>'}
+                            ${champChipsHTML.length > 0 ? champChipsHTML : '<span style="font-size:0.75rem; color:var(--text-muted);">Sin campeones añadidos aún.</span>'}
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        const deleteBtnHTML = state.summoners.length > 2 ? `
-            <button class="delete-summoner-btn" onclick="deleteSummonerFromRoster(${sum.id})" title="Eliminar de la plantilla">
+        // Delete button (NO RESTRICTION - Can delete any summoner)
+        const deleteBtnHTML = `
+            <button class="delete-summoner-btn" onclick="deleteSummonerFromRoster(${sum.id})" title="Eliminar amigo de la plantilla">
                 <i class="fa-solid fa-user-minus"></i> Eliminar
             </button>
-        ` : '';
+        `;
 
         card.innerHTML = `
             <div class="summoner-card-header">
                 <div class="summoner-avatar-box">
                     <img src="${iconUrl}" class="summoner-avatar-img" alt="Avatar Invocador">
                     <div class="summoner-name-wrapper">
-                        <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
-                               placeholder="Nombre#TAG (ej: Layvel#LAS)"
+                        <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name || '')}" 
+                               placeholder="Nombre / Riot ID (ej: Layvel#LAS)"
                                onchange="updateSummonerName(${sum.id}, this.value)">
                         <button class="riot-search-btn" onclick="searchRiotSummoner(${sum.id})">
-                            <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? `Niv. ${sum.level || 1124} Verificado` : 'Conectar Riot API'}
+                            <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? `Niv. ${sum.level || 1} Verificado` : 'Conectar Riot API'}
                         </button>
                     </div>
                 </div>
                 ${deleteBtnHTML}
             </div>
             
-            <div class="lanes-selector-title">Líneas de Preferencia (${sum.preferredLanes.length} seleccionadas):</div>
+            <div class="lanes-selector-title">Líneas de Preferencia:</div>
             <div class="lanes-options-group">
                 ${linesHTML}
             </div>
@@ -385,32 +261,24 @@ function addNewSummonerToRoster() {
     const newSum = {
         id: Date.now(),
         name: `Invocador ${nextNum}`,
-        profileIconId: 7117 + (nextNum * 3),
-        level: 300,
+        profileIconId: 7117,
+        level: 1,
         verified: false,
-        preferredLanes: ['MID', 'TOP'],
-        pools: {
-            'MID': ['Ahri', 'Yasuo'],
-            'TOP': ['Riven', 'Garen']
-        }
+        preferredLanes: [],
+        pools: {}
     };
     state.summoners.push(newSum);
     renderSummonersGrid();
-    saveRosterConfig();
+    saveRosterConfig(false);
 }
 
 function deleteSummonerFromRoster(summonerId) {
-    if (state.summoners.length <= 2) {
-        alert('Se requieren al menos 2 invocadores en la plantilla.');
-        return;
-    }
-    if (!confirm('¿Eliminar a este invocador de la plantilla?')) return;
     state.summoners = state.summoners.filter(s => s.id !== summonerId);
     renderSummonersGrid();
-    saveRosterConfig();
+    saveRosterConfig(false);
 }
 
-function saveRosterConfig() {
+function saveRosterConfig(showAlert = true) {
     localStorage.setItem('LOL_TEAM_SUMMONERS_ROSTER', JSON.stringify(state.summoners));
     try {
         fetch('/api/matches', {
@@ -420,17 +288,20 @@ function saveRosterConfig() {
         });
     } catch(e) {}
     updateCloudStatusBadge('online', '🟢 Plantilla Guardada');
-    alert('¡Plantilla de invocadores y campeones guardada en la nube con éxito!');
+    if (showAlert) {
+        alert('¡Plantilla guardada en la nube con éxito!');
+    }
 }
 
 function updateSummonerName(summonerId, newName) {
     const sum = state.summoners.find(s => s.id === summonerId);
     if (sum) {
-        sum.name = newName.trim() || `Invocador ${summonerId}`;
-        saveRosterConfig();
+        sum.name = newName.trim();
+        saveRosterConfig(false);
     }
 }
 
+// TOGGLE LANE (ZERO RESTRICTIONS: NO LIMIT ON NUMBER OF LINES)
 function toggleSummonerLane(summonerId, laneId, isChecked) {
     const sum = state.summoners.find(s => s.id === summonerId);
     if (!sum) return;
@@ -438,8 +309,8 @@ function toggleSummonerLane(summonerId, laneId, isChecked) {
     if (isChecked) {
         if (!sum.preferredLanes.includes(laneId)) {
             sum.preferredLanes.push(laneId);
-            if (!sum.pools[laneId] || sum.pools[laneId].length === 0) {
-                sum.pools[laneId] = META_SUGGESTIONS[laneId] ? META_SUGGESTIONS[laneId].slice(0, 3) : ['Ahri', 'Yasuo'];
+            if (!sum.pools[laneId]) {
+                sum.pools[laneId] = [];
             }
         }
     } else {
@@ -447,27 +318,28 @@ function toggleSummonerLane(summonerId, laneId, isChecked) {
     }
 
     renderSummonersGrid();
-    saveRosterConfig();
+    saveRosterConfig(false);
 }
 
 function presetStandardTeam() {
+    const laneKeys = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
     state.summoners.forEach((s, idx) => {
-        const laneKeys = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
         const primary = laneKeys[idx % 5];
-        const secondary = laneKeys[(idx + 1) % 5];
-        s.preferredLanes = [primary, secondary];
+        s.preferredLanes = [primary];
         s.pools = {};
         s.pools[primary] = META_SUGGESTIONS[primary] ? META_SUGGESTIONS[primary].slice(0, 3) : ['Ahri'];
-        s.pools[secondary] = META_SUGGESTIONS[secondary] ? META_SUGGESTIONS[secondary].slice(0, 2) : ['Yasuo'];
     });
 
     renderSummonersGrid();
-    saveRosterConfig();
+    saveRosterConfig(false);
 }
 
 async function searchRiotSummoner(summonerId) {
     const sum = state.summoners.find(s => s.id === summonerId);
-    if (!sum) return;
+    if (!sum || !sum.name) {
+        alert('Escribe primero el nombre de invocador / Riot ID.');
+        return;
+    }
 
     const inputName = sum.name;
     try {
@@ -477,20 +349,12 @@ async function searchRiotSummoner(summonerId) {
             sum.verified = true;
             sum.profileIconId = data.iconId;
             sum.level = data.level;
-            if (data.mainChamps && data.mainChamps.length > 0) {
-                sum.preferredLanes.forEach(l => {
-                    if (!sum.pools[l]) sum.pools[l] = [];
-                    data.mainChamps.slice(0, 2).forEach(c => {
-                        if (!sum.pools[l].includes(c)) sum.pools[l].push(c);
-                    });
-                });
-            }
             renderSummonersGrid();
-            saveRosterConfig();
+            saveRosterConfig(false);
             alert(`¡Invocador ${inputName} verificado con éxito en Riot API (Nivel ${data.level})!`);
         }
     } catch(e) {
-        alert('No se pudo verificar en Riot API. Verifica que el nombre esté en formato Nombre#TAG.');
+        alert('No se pudo verificar en Riot API. Asegúrate de incluir el formato Nombre#TAG.');
     }
 }
 
@@ -567,7 +431,7 @@ function selectChampionForPool(champKey) {
             sum.pools[state.modalTargetLaneId].push(champKey);
         }
         renderSummonersGrid();
-        saveRosterConfig();
+        saveRosterConfig(false);
     }
     closeChampModal();
 }
@@ -577,7 +441,7 @@ function removeChampFromLane(summonerId, laneId, champKey) {
     if (sum && sum.pools && sum.pools[laneId]) {
         sum.pools[laneId] = sum.pools[laneId].filter(c => c !== champKey);
         renderSummonersGrid();
-        saveRosterConfig();
+        saveRosterConfig(false);
     }
 }
 
@@ -634,7 +498,7 @@ async function saveMatchToCloud(matchObj) {
 }
 
 async function deleteMatchFromHistory(matchId) {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta partida del registro del equipo?')) return;
+    if (!confirm('¿Eliminar esta partida del historial?')) return;
 
     state.matchesHistory = state.matchesHistory.filter(m => m.id !== matchId);
     localStorage.setItem('LOL_TEAM_MATCHES_HISTORY', JSON.stringify(state.matchesHistory));
@@ -686,9 +550,9 @@ function renderMatchesHistory() {
     if (filtered.length === 0) {
         listEl.innerHTML = `
             <div style="text-align: center; padding: 3rem; background: rgba(9,20,40,0.6); border: 1px dashed var(--gold-dark); border-radius: 8px;">
-                <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: var(--gold-primary); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--gold-bright); font-family: var(--font-heading); margin-bottom: 0.5rem;">No hay partidas registradas con este filtro</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Registra las partidas jugadas con tus amigos o impórtalas con Riot API.</p>
+                <i class="fa-solid fa-scroll" style="font-size: 3rem; color: var(--gold-primary); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--gold-bright); font-family: var(--font-heading); margin-bottom: 0.5rem;">Historial en Blanco</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Aún no hay partidas registradas. Cuando juegues con tus amigos, regístralas o impórtalas con Riot API.</p>
                 <button class="hextech-btn primary large-glow" onclick="openRegisterMatchModal()">
                     <i class="fa-solid fa-plus-circle"></i> + Registrar Nueva Partida
                 </button>
@@ -719,7 +583,7 @@ function renderMatchesHistory() {
 
         const notesHTML = m.notes ? `
             <div class="match-card-notes">
-                <i class="fa-solid fa-comment-dots"></i> <strong>Puntos de Aprendizaje:</strong> ${escapeHtml(m.notes)}
+                <i class="fa-solid fa-comment-dots"></i> <strong>Observaciones:</strong> ${escapeHtml(m.notes)}
             </div>
         ` : '';
 
@@ -758,7 +622,7 @@ function filterHistoryResult(res) {
 }
 
 /* ===================================================
-   MODAL REGISTER MATCH HANDLING (DYNAMIC SQUAD PARTICIPANTS)
+   MODAL REGISTER MATCH (NO RESTRICTION ON PLAYERS COUNT)
    =================================================== */
 
 function openRegisterMatchModal() {
@@ -768,39 +632,44 @@ function openRegisterMatchModal() {
     grid.innerHTML = '';
     const defaultLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
 
-    state.summoners.forEach((s, i) => {
-        const isCheckedDefault = i < 5;
-        const laneId = s.preferredLanes[0] || defaultLanes[i % 5] || 'MID';
-        const defaultChamp = (s.pools && s.pools[laneId] && s.pools[laneId][0]) ? s.pools[laneId][0] : 'Ahri';
+    // If no summoners yet, offer an input directly
+    if (state.summoners.length === 0) {
+        grid.innerHTML = `<p style="color:var(--text-secondary); grid-column:1/-1;">Agrega primero a tus amigos en la pestaña "1. Plantilla de Amigos" para seleccionarlos aquí con un solo clic.</p>`;
+    } else {
+        state.summoners.forEach((s, i) => {
+            const isCheckedDefault = i < 5;
+            const laneId = s.preferredLanes[0] || defaultLanes[i % 5] || 'MID';
+            const defaultChamp = (s.pools && s.pools[laneId] && s.pools[laneId][0]) ? s.pools[laneId][0] : '';
 
-        const row = document.createElement('div');
-        row.className = 'player-input-row';
-        row.style.opacity = isCheckedDefault ? '1' : '0.4';
-        row.innerHTML = `
-            <div class="player-name-badge">
-                <input type="checkbox" class="player-active-checkbox" name="playerActive_${i}" ${isCheckedDefault ? 'checked' : ''} onchange="this.closest('.player-input-row').style.opacity = this.checked ? '1' : '0.4'">
-                <i class="fa-solid fa-user-shield"></i>
-                <span style="font-weight:700;">${escapeHtml(s.name)}</span>
-                <input type="hidden" name="playerSummonerName_${i}" value="${escapeHtml(s.name)}">
-            </div>
-            <select class="select-line-input" name="playerLane_${i}">
-                <option value="TOP" ${laneId === 'TOP' ? 'selected' : ''}>Top</option>
-                <option value="JUNGLE" ${laneId === 'JUNGLE' ? 'selected' : ''}>Jungla</option>
-                <option value="MID" ${laneId === 'MID' ? 'selected' : ''}>Mid</option>
-                <option value="BOT" ${laneId === 'BOT' ? 'selected' : ''}>Bot / ADC</option>
-                <option value="SUPPORT" ${laneId === 'SUPPORT' ? 'selected' : ''}>Soporte</option>
-            </select>
-            <input type="text" class="select-champ-input" name="playerChampion_${i}" placeholder="Campeón" value="${defaultChamp}">
-            <div class="kda-input-group">
-                <input type="number" name="playerKills_${i}" value="5" min="0" title="Asesinatos (Kills)">
-                <span class="kda-slash">/</span>
-                <input type="number" name="playerDeaths_${i}" value="2" min="0" title="Muertes (Deaths)">
-                <span class="kda-slash">/</span>
-                <input type="number" name="playerAssists_${i}" value="8" min="0" title="Asistencias (Assists)">
-            </div>
-        `;
-        grid.appendChild(row);
-    });
+            const row = document.createElement('div');
+            row.className = 'player-input-row';
+            row.style.opacity = isCheckedDefault ? '1' : '0.4';
+            row.innerHTML = `
+                <div class="player-name-badge">
+                    <input type="checkbox" class="player-active-checkbox" name="playerActive_${i}" ${isCheckedDefault ? 'checked' : ''} onchange="this.closest('.player-input-row').style.opacity = this.checked ? '1' : '0.4'">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span style="font-weight:700;">${escapeHtml(s.name || `Amigo ${i+1}`)}</span>
+                    <input type="hidden" name="playerSummonerName_${i}" value="${escapeHtml(s.name || `Amigo ${i+1}`)}">
+                </div>
+                <select class="select-line-input" name="playerLane_${i}">
+                    <option value="TOP" ${laneId === 'TOP' ? 'selected' : ''}>Top</option>
+                    <option value="JUNGLE" ${laneId === 'JUNGLE' ? 'selected' : ''}>Jungla</option>
+                    <option value="MID" ${laneId === 'MID' ? 'selected' : ''}>Mid</option>
+                    <option value="BOT" ${laneId === 'BOT' ? 'selected' : ''}>Bot / ADC</option>
+                    <option value="SUPPORT" ${laneId === 'SUPPORT' ? 'selected' : ''}>Soporte</option>
+                </select>
+                <input type="text" class="select-champ-input" name="playerChampion_${i}" placeholder="Campeón (ej: Ahri)" value="${defaultChamp}">
+                <div class="kda-input-group">
+                    <input type="number" name="playerKills_${i}" value="0" min="0" title="Kills">
+                    <span class="kda-slash">/</span>
+                    <input type="number" name="playerDeaths_${i}" value="0" min="0" title="Deaths">
+                    <span class="kda-slash">/</span>
+                    <input type="number" name="playerAssists_${i}" value="0" min="0" title="Assists">
+                </div>
+            `;
+            grid.appendChild(row);
+        });
+    }
 
     document.getElementById('matchRegisterModal').style.display = 'flex';
 }
@@ -809,6 +678,7 @@ function closeMatchRegisterModal() {
     document.getElementById('matchRegisterModal').style.display = 'none';
 }
 
+// HANDLE SAVE MATCH (ZERO RESTRICTIONS ON NUMBER OF PLAYERS)
 function handleSaveMatchSubmit(e) {
     e.preventDefault();
 
@@ -821,7 +691,7 @@ function handleSaveMatchSubmit(e) {
     state.summoners.forEach((s, i) => {
         const isActive = form.querySelector(`input[name="playerActive_${i}"]`)?.checked;
         if (isActive) {
-            const sumName = form.querySelector(`input[name="playerSummonerName_${i}"]`)?.value || s.name;
+            const sumName = form.querySelector(`input[name="playerSummonerName_${i}"]`)?.value || s.name || `Invocador ${i+1}`;
             const lane = form.querySelector(`select[name="playerLane_${i}"]`)?.value || 'MID';
             const champ = form.querySelector(`input[name="playerChampion_${i}"]`)?.value || 'Ahri';
             const kills = parseInt(form.querySelector(`input[name="playerKills_${i}"]`)?.value || 0);
@@ -839,11 +709,6 @@ function handleSaveMatchSubmit(e) {
         }
     });
 
-    if (players.length < 2) {
-        alert('Debes seleccionar al menos 2 amigos participantes para registrar la partida.');
-        return;
-    }
-
     const newMatch = {
         id: 'match-' + Date.now(),
         date: new Date().toISOString(),
@@ -859,7 +724,12 @@ function handleSaveMatchSubmit(e) {
 }
 
 async function fetchRecentMatchesFromRiot() {
-    const mainSummoner = state.summoners[0]?.name || 'Layvel#LAS';
+    const mainSummoner = state.summoners[0]?.name || '';
+    if (!mainSummoner) {
+        alert('Registra primero el nombre de al menos 1 amigo en la plantilla para consultar sus partidas en Riot API.');
+        return;
+    }
+
     updateCloudStatusBadge('syncing', 'Consultando Riot API...');
 
     try {
@@ -902,7 +772,7 @@ async function fetchRecentMatchesFromRiot() {
 }
 
 /* ===================================================
-   SECTION 3: ANALYTICS DASHBOARD & DUO SYNERGY MATRIX
+   SECTION 3: ANALYTICS & SYNERGIES DASHBOARD
    =================================================== */
 
 function renderAnalyticsDashboard() {
@@ -911,15 +781,25 @@ function renderAnalyticsDashboard() {
     const notesFeed = document.getElementById('improvementNotesFeed');
     if (!tbody || !lanesContainer) return;
 
+    if (state.matchesHistory.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:2rem;">Sin partidas registradas todavía.</td></tr>`;
+        lanesContainer.innerHTML = `<p style="color:var(--text-secondary); font-style:italic; padding:1rem;">Registra partidas para calcular el winrate por línea.</p>`;
+        if (notesFeed) notesFeed.innerHTML = `<p style="color:var(--text-secondary); font-style:italic;">No hay observaciones anotadas aún.</p>`;
+        renderSynergyMatrix();
+        return;
+    }
+
     // 1. Calculate per-summoner stats
     const summonerStats = {};
     state.summoners.forEach(s => {
-        summonerStats[s.name.toLowerCase()] = {
-            displayName: s.name,
-            totalGames: 0, wins: 0, losses: 0,
-            totalKills: 0, totalDeaths: 0, totalAssists: 0,
-            championsCount: {}
-        };
+        if (s.name) {
+            summonerStats[s.name.toLowerCase()] = {
+                displayName: s.name,
+                totalGames: 0, wins: 0, losses: 0,
+                totalKills: 0, totalDeaths: 0, totalAssists: 0,
+                championsCount: {}
+            };
+        }
     });
 
     state.matchesHistory.forEach(m => {
@@ -1018,7 +898,7 @@ function renderAnalyticsDashboard() {
     if (!notesFeed) return;
 
     if (allNotes.length === 0) {
-        notesFeed.innerHTML = `<p style="color: var(--text-secondary); font-style: italic;">No hay notas grabadas aún. Escribe puntos a mejorar cuando registres partidas.</p>`;
+        notesFeed.innerHTML = `<p style="color: var(--text-secondary); font-style: italic;">No hay notas grabadas aún. Escribe observaciones cuando registres partidas.</p>`;
     } else {
         notesFeed.innerHTML = allNotes.map(m => {
             const dateStr = new Date(m.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
@@ -1065,7 +945,7 @@ function renderSynergyMatrix() {
 
     const duosArray = Object.values(duoStats);
     if (duosArray.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-secondary); font-style: italic;">Registra partidas con 2 o más amigos para calcular automáticamente la matriz de sinergias.</p>`;
+        container.innerHTML = `<p style="color: var(--text-secondary); font-style: italic; padding: 1rem;">Registra partidas donde jueguen 2 o más amigos para calcular automáticamente la matriz de sinergias.</p>`;
         return;
     }
 
