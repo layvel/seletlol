@@ -1061,6 +1061,54 @@ function importMatchesJSON(event) {
     reader.readAsText(file);
 }
 
+/* ===================================================
+   RIOT API AUTOMATIC RECENT MATCHES FETCHER
+   =================================================== */
+
+async function fetchRecentMatchesFromRiot() {
+    const mainSummoner = state.summoners[0]?.name || 'Layvel#LAS';
+    updateCloudStatusBadge('syncing', 'Consultando Riot API...');
+
+    try {
+        const resp = await fetch(`/api/riot-matches?name=${encodeURIComponent(mainSummoner)}&region=las`);
+        const data = await resp.json();
+
+        if (data && data.success && Array.isArray(data.matches)) {
+            let addedCount = 0;
+            data.matches.forEach(newM => {
+                const exists = state.matchesHistory.some(existingM => existingM.id === newM.id);
+                if (!exists) {
+                    state.matchesHistory.unshift(newM);
+                    addedCount++;
+                }
+            });
+
+            localStorage.setItem('LOL_TEAM_MATCHES_HISTORY', JSON.stringify(state.matchesHistory));
+            
+            // Sync new matches to cloud
+            try {
+                await fetch('/api/matches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'IMPORT_ALL', matches: state.matchesHistory })
+                });
+            } catch(e) {}
+
+            updateCloudStatusBadge('online', '🟢 Sincronizado en Nube');
+            renderMatchesHistory();
+            renderAnalyticsDashboard();
+
+            alert(`⚡ ¡Consulta de Riot API completada!\nSe agregaron ${addedCount} partidas recientes encontradas para ${mainSummoner}.`);
+        } else {
+            throw new Error('No se pudieron obtener partidas');
+        }
+    } catch (err) {
+        console.error('Error fetching recent Riot matches:', err);
+        updateCloudStatusBadge('online', '🟡 Error API (Caché local)');
+        alert('No se pudo conectar a la API de Riot en este momento. Intenta de nuevo más tarde.');
+    }
+}
+
 // STEP 2: CHAMPION POOL SELECTION PER SUMMONER
 function renderSummonerChampTabs() {
     const tabsContainer = document.getElementById('summonerChampTabs');

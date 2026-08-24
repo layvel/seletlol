@@ -98,9 +98,14 @@
 
             <!-- Action Controls Header -->
             <div class="tracker-action-bar">
-                <button class="hextech-btn primary large-glow" onclick="openRegisterMatchModal()">
-                    <i class="fa-solid fa-plus-circle"></i> + Registrar Nueva Partida
-                </button>
+                <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                    <button class="hextech-btn primary large-glow" onclick="openRegisterMatchModal()">
+                        <i class="fa-solid fa-plus-circle"></i> + Registrar Nueva Partida
+                    </button>
+                    <button class="hextech-btn primary glow-button" onclick="fetchRecentMatchesFromRiot()" title="Buscar automáticamente las últimas partidas del equipo desde Riot / OP.GG API">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> ⚡ Importar Partidas de Riot API
+                    </button>
+                </div>
                 
                 <div class="tracker-sub-actions">
                     <button class="hextech-btn secondary" onclick="loadMatchesFromCloud()" title="Descargar la información más reciente de la nube">
