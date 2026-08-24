@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoL Team Tracker & Draft Simulator - League of Legends</title>
+    <title>LoL Squad Tracker & Team Analytics - League of Legends</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,78 +22,75 @@
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <div class="logo-text">
-                <h1>TRACKER DE EQUIPO & DRAFT SIMULATOR</h1>
-                <span class="sub-title">REGISTRO DE PARTIDAS & ANÁLISIS EN VIVO</span>
+                <h1>LOL SQUAD TRACKER & ANALYTICS</h1>
+                <span class="sub-title">REGISTRO DE PLANTILLA (5-7 AMIGOS) & SINERGIAS DE EQUIPO</span>
             </div>
         </div>
 
         <div class="header-right">
             <!-- Cloud Connection Status Badge -->
-            <div class="api-status-badge status-online" id="cloudStatusBadge" title="Partidas sincronizadas automáticamente en la nube para todo el equipo">
+            <div class="api-status-badge status-online" id="cloudStatusBadge" title="Partidas y plantilla sincronizadas automáticamente en la nube">
                 <span class="pulse-dot"></span>
                 <span id="cloudStatusText">🟢 Sincronizado en Nube</span>
-            </div>
-
-            <!-- Mode Switcher -->
-            <div class="mode-toggle-group">
-                <span class="mode-label">Modo Tarjetas:</span>
-                <button class="mode-btn active" id="modeMystery" onclick="setAppMode('MYSTERY')">
-                    <i class="fa-solid fa-box-open"></i> Revelación
-                </button>
-                <button class="mode-btn" id="modeStandard" onclick="setAppMode('STANDARD')">
-                    <i class="fa-solid fa-eye"></i> Estándar
-                </button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
     <main class="main-container">
-        <!-- Main Navigation Tabs -->
+        <!-- Main Navigation Tabs (3 Dedicated Sections) -->
         <nav class="stepper-nav">
-            <button class="step-btn active" id="tabStepHistory" onclick="switchStep('history')">
+            <button class="step-btn active" id="tabStep1" onclick="switchStep('roster')">
+                <span class="step-num"><i class="fa-solid fa-users-gear"></i></span>
+                <span class="step-label">1. Plantilla de Amigos (5-7 Jugadores)</span>
+            </button>
+            <button class="step-btn" id="tabStepHistory" onclick="switchStep('history')">
                 <span class="step-num"><i class="fa-solid fa-scroll"></i></span>
-                <span class="step-label">Historial de Partidas</span>
+                <span class="step-label">2. Historial de Partidas</span>
             </button>
             <button class="step-btn" id="tabStepAnalytics" onclick="switchStep('analytics')">
                 <span class="step-num"><i class="fa-solid fa-chart-line"></i></span>
-                <span class="step-label">Análisis de Equipo</span>
-            </button>
-            <button class="step-btn" id="tabStep1" onclick="switchStep(1)">
-                <span class="step-num">1</span>
-                <span class="step-label">Equipo e Invocadores</span>
-            </button>
-            <button class="step-btn" id="tabStep2" onclick="switchStep(2)">
-                <span class="step-num">2</span>
-                <span class="step-label">Pool de Campeones</span>
-            </button>
-            <button class="step-btn" id="tabStep3" onclick="switchStep(3)">
-                <span class="step-num">3</span>
-                <span class="step-label">Simulador 3 Drafts</span>
-            </button>
-            <button class="step-btn" id="tabStep0" onclick="switchStep(0)">
-                <span class="step-num"><i class="fa-solid fa-satellite-dish"></i></span>
-                <span class="step-label">Buscador Riot API</span>
+                <span class="step-label">3. Estadísticas y Sinergias</span>
             </button>
         </nav>
 
-        <!-- Validation Alert & Smart Suggestions Banner -->
-        <div class="validation-banner" id="validationBanner" style="display: none;">
-            <div class="banner-main">
-                <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <div class="banner-message" id="validationMessage">
-                    Información de equipo configurada correctamente.
-                </div>
+        <!-- ========================================================
+             SECCIÓN 1: PLANTILLA DE AMIGOS (5 A 7+ INVOCADORES)
+             ======================================================== -->
+        <section class="step-content active" id="stepRosterContent">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-users-gear"></i> Registro de Plantilla de Equipo (5 a 7 Amigos)</h2>
+                <p>Registra a los integrantes de tu grupo de LoL, sus nombres de invocador (`Nombre#TAG`), sus líneas de preferencia y los campeones que quiere jugar en cada rol.</p>
             </div>
-        </div>
+
+            <!-- Roster Controls Bar -->
+            <div class="tracker-action-bar" style="margin-bottom: 1.5rem;">
+                <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                    <button class="hextech-btn primary glow-button" onclick="addNewSummonerToRoster()">
+                        <i class="fa-solid fa-user-plus"></i> + Agregar Amigo a Plantilla
+                    </button>
+                    <button class="hextech-btn secondary" onclick="presetStandardTeam()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Asignar Líneas Equilibradas
+                    </button>
+                </div>
+                <button class="hextech-btn primary large-glow" onclick="saveRosterConfig()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> 💾 Guardar Plantilla en la Nube
+                </button>
+            </div>
+
+            <!-- Dynamic Summoners Grid -->
+            <div class="summoners-grid" id="summonersGrid">
+                <!-- Dynamic Summoner Profile Cards injected via JS -->
+            </div>
+        </section>
 
         <!-- ========================================================
-             TAB 10: HISTORIAL DE PARTIDAS DE EQUIPO (DEFAULT TAB)
+             SECCIÓN 2: HISTORIAL Y REGISTRO DE PARTIDAS (2+ AMIGOS)
              ======================================================== -->
-        <section class="step-content active" id="stepHistoryContent">
+        <section class="step-content" id="stepHistoryContent">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-scroll"></i> Registro de Partidas de Equipo</h2>
-                <p>Guarda el resultado de cada partida jugada con tus amigos, registra el KDA individual de cada invocador y anota los puntos a mejorar para seguir subiendo como equipo.</p>
+                <h2><i class="fa-solid fa-scroll"></i> Historial de Partidas de Equipo</h2>
+                <p>Registra manualmente las partidas o impórtalas de Riot API cuando jueguen en dúo, trío o equipo completo de 5.</p>
             </div>
 
             <!-- Action Controls Header -->
@@ -102,7 +99,7 @@
                     <button class="hextech-btn primary large-glow" onclick="openRegisterMatchModal()">
                         <i class="fa-solid fa-plus-circle"></i> + Registrar Nueva Partida
                     </button>
-                    <button class="hextech-btn primary glow-button" onclick="fetchRecentMatchesFromRiot()" title="Buscar automáticamente las últimas partidas del equipo desde Riot / OP.GG API">
+                    <button class="hextech-btn primary glow-button" onclick="fetchRecentMatchesFromRiot()" title="Buscar automáticamente las últimas partidas del equipo desde Riot API / OP.GG">
                         <i class="fa-solid fa-cloud-arrow-down"></i> ⚡ Importar Partidas de Riot API
                     </button>
                 </div>
@@ -173,18 +170,29 @@
         </section>
 
         <!-- ========================================================
-             TAB 11: ANÁLISIS DE EQUIPO Y ESTADÍSTICAS
+             SECCIÓN 3: ESTADÍSTICAS DISPONIBLES & SINERGIAS DE EQUIPO
              ======================================================== -->
         <section class="step-content" id="stepAnalyticsContent">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-chart-line"></i> Análisis de Rendimiento del Equipo</h2>
-                <p>Descubre qué líneas ganan más partidas, los campeones con mayor KDA y los consejos clave anotados durante los juegos.</p>
+                <h2><i class="fa-solid fa-chart-line"></i> Panel de Estadísticas y Sinergias del Equipo</h2>
+                <p>Analiza todas las métricas disponibles: Winrate por jugador, sinergia entre duplas de amigos, rendimiento por línea y notas acumuladas.</p>
+            </div>
+
+            <!-- Duo Synergy Matrix Card -->
+            <div class="analytics-card full-card" style="margin-bottom: 1.5rem;">
+                <h3><i class="fa-solid fa-people-group"></i> Matriz de Sinergia entre Amigos (Dúos / Tríos)</h3>
+                <p class="subtitle-hint">Tasa de victorias y rendimiento cuando 2 o más amigos específicos juegan juntos en el mismo equipo.</p>
+                <div class="synergy-grid" id="synergyMatrixContainer">
+                    <!-- Injected via JS -->
+                </div>
             </div>
 
             <div class="analytics-grid">
                 <!-- Left Column: Individual Player Stats -->
                 <div class="analytics-card wide-card">
-                    <h3><i class="fa-solid fa-users"></i> Rendimiento por Invocador (Plantilla)</h3>
+                    <h3><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span><i class="fa-solid fa-users"></i> Desempeño Individual por Invocador</span>
+                    </div></h3>
                     <div class="table-responsive">
                         <table class="hextech-table">
                             <thead>
@@ -213,208 +221,19 @@
                 </div>
             </div>
 
-            <!-- Duo Synergy Matrix Card -->
-            <div class="analytics-card full-card" style="margin-bottom: 1.5rem;">
-                <h3><i class="fa-solid fa-people-group"></i> Matriz de Sinergia entre Amigos (Dúos / Tríos)</h3>
-                <p class="subtitle-hint">Métricas de rendimiento cuando 2 o más amigos específicos juegan en el mismo equipo.</p>
-                <div class="synergy-grid" id="synergyMatrixContainer">
-                    <!-- Injected via JS -->
-                </div>
-            </div>
-
             <!-- Team Improvement Notes Feed -->
             <div class="analytics-card full-card">
-                <h3><i class="fa-solid fa-lightbulb"></i> Cuaderno de Aprendizaje & Consejos del Equipo</h3>
+                <h3><i class="fa-solid fa-lightbulb"></i> Cuaderno de Aprendizaje & Consejos de Equipo</h3>
                 <p class="subtitle-hint">Observaciones acumuladas de las últimas partidas para revisar antes de entrar a cola.</p>
                 <div class="improvement-notes-feed" id="improvementNotesFeed">
                     <!-- Injected via JS -->
                 </div>
             </div>
         </section>
-
-        <!-- STEP 1: SUMMONER LANE SELECTION (DYNAMIC ROSTER 5-7+) -->
-        <section class="step-content" id="step1Content">
-            <div class="section-intro">
-                <h2><i class="fa-solid fa-users-gear"></i> Configuración de Plantilla de Invocadores (5 a 7 Jugadores)</h2>
-                <p>Registra a todos tus amigos del grupo, sus líneas de preferencia y los campeones que quieren jugar en cada rol.</p>
-            </div>
-
-            <!-- Roster Controls Bar -->
-            <div class="tracker-action-bar" style="margin-bottom: 1rem;">
-                <div style="display: flex; gap: 0.8rem;">
-                    <button class="hextech-btn primary glow-button" onclick="addNewSummonerToRoster()">
-                        <i class="fa-solid fa-user-plus"></i> + Agregar Invocador a Plantilla
-                    </button>
-                    <button class="hextech-btn secondary" onclick="presetStandardTeam()">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Autocompletar Líneas Equilibradas
-                    </button>
-                </div>
-                <button class="hextech-btn primary large-glow" onclick="saveRosterConfig()">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> 💾 Guardar Plantilla en la Nube
-                </button>
-            </div>
-
-            <div class="summoners-grid" id="summonersGrid">
-                <!-- Dynamic Summoner Cards injected via JS -->
-            </div>
-
-            <div class="action-bar">
-                <button class="hextech-btn secondary" onclick="resetAllLanes()">
-                    <i class="fa-solid fa-rotate-left"></i> Limpiar Selecciones
-                </button>
-                <button class="hextech-btn secondary" onclick="presetStandardTeam()">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Autocompletar Líneas Equilibradas
-                </button>
-                <button class="hextech-btn primary" id="btnGoToStep2" onclick="validateStep1AndProceed()">
-                    Siguiente: Elegir Campeones <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
-        </section>
-
-        <!-- STEP 2: CHAMPION SELECTION PER LANE -->
-        <section class="step-content" id="step2Content">
-            <div class="section-intro">
-                <h2><i class="fa-solid fa-trophy"></i> Selección de 3 Campeones por Línea</h2>
-                <p>Para cada invocador y sus líneas elegidas, selecciona 3 campeones favoritos de la base de datos oficial de LoL o usa los sugeridos por la API.</p>
-            </div>
-
-            <div class="summoner-champ-tabs" id="summonerChampTabs">
-                <!-- Invocadores sub-navigation injected via JS -->
-            </div>
-
-            <div class="champ-pool-editor" id="champPoolEditor">
-                <!-- Dynamic Champion Selector for active summoner -->
-            </div>
-
-            <div class="action-bar">
-                <button class="hextech-btn secondary" onclick="switchStep(1)">
-                    <i class="fa-solid fa-arrow-left"></i> Volver a Líneas
-                </button>
-                <button class="hextech-btn secondary" onclick="autoFillRandomChampions()">
-                    <i class="fa-solid fa-shuffle"></i> Autocompletar Campeones Meta
-                </button>
-                <button class="hextech-btn primary" id="btnGoToStep3" onclick="validateStep2AndProceed()">
-                    Generar 3 Partidas <i class="fa-solid fa-dice-d20"></i>
-                </button>
-            </div>
-        </section>
-
-        <!-- STEP 3: MATCHES SIMULATION & DRAFT VISUALIZER -->
-        <section class="step-content" id="step3Content">
-            <div class="section-intro">
-                <h2><i class="fa-solid fa-gamepad"></i> Resultado de las 3 Partidas Generadas</h2>
-                <p id="step3Description">🎲 Modo Revelación Misteriosa: Haz clic sobre cada carta para revelar el rol y campeón asignado a cada invocador.</p>
-            </div>
-
-            <div class="matches-tab-selector">
-                <button class="match-tab-btn active" id="matchTab1" onclick="switchMatchView(1)">
-                    <i class="fa-solid fa-fire"></i> Partida 1
-                </button>
-                <button class="match-tab-btn" id="matchTab2" onclick="switchMatchView(2)">
-                    <i class="fa-solid fa-bolt"></i> Partida 2
-                </button>
-                <button class="match-tab-btn" id="matchTab3" onclick="switchMatchView(3)">
-                    <i class="fa-solid fa-crown"></i> Partida 3
-                </button>
-                
-                <div class="mystery-controls" id="mysteryControlsBar">
-                    <button class="hextech-btn primary small" onclick="revealAllCardsInActiveMatch()">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Revelar Toda la Partida
-                    </button>
-                    <button class="hextech-btn secondary small" onclick="resetMysteryCards()">
-                        <i class="fa-solid fa-eye-slash"></i> Ocultar Cartas
-                    </button>
-                    <button class="hextech-btn primary small glow-button" onclick="convertDraftToMatchRecord()">
-                        <i class="fa-solid fa-plus-circle"></i> + Guardar como Partida Jugada
-                    </button>
-                </div>
-
-                <button class="hextech-btn secondary icon-only" onclick="generate3Matches()" title="Regenerar Variación">
-                    <i class="fa-solid fa-rotate"></i>
-                </button>
-            </div>
-
-            <div class="match-display-container" id="matchDisplayContainer">
-                <!-- Active match team layout injected via JS -->
-            </div>
-
-            <!-- Full 3 Matches Summary Overview Table -->
-            <div class="matches-summary-card">
-                <h3><i class="fa-solid fa-list-check"></i> Resumen de Rotación de las 3 Partidas</h3>
-                <div class="table-responsive">
-                    <table class="hextech-table" id="matchesSummaryTable">
-                        <thead>
-                            <tr>
-                                <th>Invocador</th>
-                                <th>Partida 1 (Línea / Campeón)</th>
-                                <th>Partida 2 (Línea / Campeón)</th>
-                                <th>Partida 3 (Línea / Campeón)</th>
-                                <th>Diversidad</th>
-                            </tr>
-                        </thead>
-                        <tbody id="matchesSummaryTbody">
-                            <!-- Table rows injected via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="action-bar">
-                <button class="hextech-btn secondary" onclick="switchStep(1)">
-                    <i class="fa-solid fa-arrow-left"></i> Cambiar Nombres / Líneas
-                </button>
-                <button class="hextech-btn primary" onclick="exportDraftConfig()">
-                    <i class="fa-solid fa-download"></i> Exportar Simulación (JSON)
-                </button>
-            </div>
-        </section>
-
-        <!-- STEP 0: DEDICATED RIOT API SUMMONER SEARCH TAB -->
-        <section class="step-content" id="step0Content">
-            <div class="section-intro">
-                <h2><i class="fa-solid fa-satellite-dish"></i> Buscador de Invocador Riot API (LAS / LAN / NA / EUW)</h2>
-                <p>Ingresa tu **Nombre#Tag** (ej: <strong>Layvel#LAS</strong>) para traer tu foto de perfil oficial y tus campeones con mayor maestría.</p>
-            </div>
-
-            <div class="riot-api-tester-card">
-                <div class="tester-input-bar">
-                    <select id="riotRegionSelect" class="region-select-input">
-                        <option value="las" selected>LAS (Latinoamérica Sur)</option>
-                        <option value="lan">LAN (Latinoamérica Norte)</option>
-                        <option value="na">NA (Norteamérica)</option>
-                        <option value="euw">EUW (Europa Oeste)</option>
-                        <option value="kr">KR (Corea)</option>
-                    </select>
-
-                    <div class="search-box">
-                        <i class="fa-solid fa-user-ninja"></i>
-                        <input type="text" id="riotSingleSearchInput" value="Layvel#LAS" placeholder="Ej: Layvel#LAS, Faker#KR1..." onkeypress="if(event.key==='Enter') executeSingleSummonerSearch()">
-                    </div>
-
-                    <button class="hextech-btn primary" onclick="executeSingleSummonerSearch()">
-                        <i class="fa-solid fa-satellite-dish"></i> Consultar Riot API
-                    </button>
-                </div>
-
-                <div class="sample-chips-bar">
-                    <span class="chip-label">Prueba rápida con tu cuenta o un pro:</span>
-                    <button class="chip-btn primary-chip" onclick="quickSearchSample('Layvel#LAS')">⭐ Layvel#LAS (Tu Cuenta)</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Faker#KR1')">Faker#KR1</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Caps#EUW')">Caps#EUW</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Reckless#EUW')">Reckless#EUW</button>
-                    <button class="chip-btn" onclick="quickSearchSample('Keria#KR1')">Keria#KR1</button>
-                </div>
-            </div>
-
-            <!-- Single Summoner Live Result Card -->
-            <div class="riot-result-container" id="riotResultContainer">
-                <!-- Dynamically loaded on search -->
-            </div>
-        </section>
     </main>
 
     <!-- ========================================================
-         MODAL 1: REGISTRAR NUEVA PARTIDA EN EL TRACKER
+         MODAL 1: REGISTRAR PARTIDA DE EQUIPO (PARTICIPANTES SELECCIONABLES)
          ======================================================== -->
     <div class="modal-backdrop" id="matchRegisterModal">
         <div class="hextech-modal large-modal">
@@ -445,9 +264,9 @@
                         </div>
                     </div>
 
-                    <!-- 5 Players Performance Inputs Table -->
+                    <!-- Players Participation Checklist Section -->
                     <div class="players-input-section">
-                        <h4><i class="fa-solid fa-users"></i> Desempeño Individual de los 5 Invocadores</h4>
+                        <h4><i class="fa-solid fa-users"></i> Selecciona los Amigos que Jugaron en esta Partida (mínimo 2)</h4>
                         <div class="players-input-grid" id="registerMatchPlayersGrid">
                             <!-- Injected dynamically via JS -->
                         </div>
@@ -458,7 +277,7 @@
                         <label for="matchNotesInput">
                             <i class="fa-solid fa-lightbulb"></i> Observaciones de Equipo / Puntos a Mejorar:
                         </label>
-                        <textarea id="matchNotesInput" rows="3" placeholder="Ej: Buen control de Dragón. Falta visión en Baron al minuto 25. Riven e Invocador 3 coordinaron muy bien en TF..."></textarea>
+                        <textarea id="matchNotesInput" rows="3" placeholder="Ej: Excelente comunicación Mid + Jungla. Faltó visión en Baron al minuto 25..."></textarea>
                     </div>
                 </div>
 
@@ -469,38 +288,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- ========================================================
-         MODAL 2: SELECTOR DE CAMPEÓN
-         ======================================================== -->
-    <div class="modal-backdrop" id="champPickerModal">
-        <div class="hextech-modal">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-mask"></i> Seleccionar Campeón para <span id="modalTargetLabel">TOP - Invocador 1</span></h3>
-                <button class="close-modal-btn" onclick="closeChampModal()">&times;</button>
-            </div>
-
-            <div class="modal-filters">
-                <div class="search-box">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" id="champSearchInput" placeholder="Buscar campeón (ej: Ahri, Yasuo, Darius)..." oninput="filterChampions()">
-                </div>
-                <div class="role-filter-pills" id="modalRoleFilters">
-                    <button class="pill active" onclick="setModalRoleFilter('ALL')">Todos</button>
-                    <button class="pill" onclick="setModalRoleFilter('Fighter')">Luchadores</button>
-                    <button class="pill" onclick="setModalRoleFilter('Mage')">Magos</button>
-                    <button class="pill" onclick="setModalRoleFilter('Assassin')">Asesinos</button>
-                    <button class="pill" onclick="setModalRoleFilter('Tank')">Tanques</button>
-                    <button class="pill" onclick="setModalRoleFilter('Marksman')">Tiradores</button>
-                    <button class="pill" onclick="setModalRoleFilter('Support')">Soportes</button>
-                </div>
-            </div>
-
-            <div class="modal-champions-grid" id="modalChampsGrid">
-                <!-- Champions list rendered dynamically -->
-            </div>
         </div>
     </div>
 

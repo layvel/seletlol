@@ -38,12 +38,12 @@ const RIOT_SUMMONER_PRESETS = {
     'KERIA#KR1': { iconId: 539, level: 690, mainChamps: ['Thresh', 'Lux', 'Braum', 'Nami', 'Bard'], region: 'KR' }
 };
 
-// Global App State - Default start on Match History Tab ('history')
+// Global App State - Default start on Roster Tab ('roster')
 const state = {
     version: '14.1.1',
     championsDict: {},
     championsList: [],
-    currentStep: 'history', // Start on History Tracker by default!
+    currentStep: 'roster', // Start on Squad Roster Tab by default!
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY',
@@ -63,13 +63,15 @@ const state = {
     modalRoleFilter: 'ALL',
     modalSearchQuery: '',
 
-    // 5 Summoners Data
+    // Dynamic 5 to 7 Friends Roster
     summoners: [
-        { id: 1, name: 'Layvel', profileIconId: 7117, level: 1124, verified: false, preferredLanes: ['TOP', 'MID', 'BOT'], mainChamps: ['Riven', 'Yasuo', 'Lucian'], pools: {} },
+        { id: 1, name: 'Layvel#LAS', profileIconId: 7117, level: 1124, verified: true, preferredLanes: ['TOP', 'MID', 'BOT'], mainChamps: ['Riven', 'Yasuo', 'Lucian'], pools: {} },
         { id: 2, name: 'Invocador 2', profileIconId: 54, level: 759, verified: false, preferredLanes: ['JUNGLE', 'MID', 'BOT'], mainChamps: ['LeeSin', 'JarvanIV', 'Viego'], pools: {} },
         { id: 3, name: 'Invocador 3', profileIconId: 78, level: 388, verified: false, preferredLanes: ['MID', 'BOT', 'SUPPORT'], mainChamps: ['Yasuo', 'Ahri', 'Syndra'], pools: {} },
         { id: 4, name: 'Invocador 4', profileIconId: 92, level: 424, verified: false, preferredLanes: ['TOP', 'BOT', 'SUPPORT'], mainChamps: ['Jhin', 'Kaisa', 'Samira'], pools: {} },
-        { id: 5, name: 'Invocador 5', profileIconId: 105, level: 462, verified: false, preferredLanes: ['TOP', 'JUNGLE', 'SUPPORT'], mainChamps: ['Thresh', 'Nautilus', 'Leona'], pools: {} }
+        { id: 5, name: 'Invocador 5', profileIconId: 105, level: 462, verified: false, preferredLanes: ['TOP', 'JUNGLE', 'SUPPORT'], mainChamps: ['Thresh', 'Nautilus', 'Leona'], pools: {} },
+        { id: 6, name: 'Invocador 6', profileIconId: 120, level: 350, verified: false, preferredLanes: ['JUNGLE', 'SUPPORT'], mainChamps: ['Warwick', 'Blitzcrank'], pools: {} },
+        { id: 7, name: 'Invocador 7', profileIconId: 135, level: 280, verified: false, preferredLanes: ['TOP', 'MID'], mainChamps: ['Darius', 'Zed'], pools: {} }
     ],
 
     // Smart suggestion cache
@@ -95,7 +97,7 @@ async function initApp() {
     presetStandardTeam();
     await loadRiotDataDragon();
     await loadMatchesFromCloud();
-    switchStep('history');
+    switchStep('roster');
 }
 
 // STEP 0: DEDICATED SINGLE SUMMONER SEARCH (TESTER TAB)
@@ -591,29 +593,21 @@ function switchStep(stepKey) {
         sec.classList.remove('active');
     });
 
-    let targetId = 'stepHistoryContent';
-    if (stepKey === 'history') targetId = 'stepHistoryContent';
+    let targetId = 'stepRosterContent';
+    if (stepKey === 'roster' || stepKey === 1) targetId = 'stepRosterContent';
+    else if (stepKey === 'history') targetId = 'stepHistoryContent';
     else if (stepKey === 'analytics') targetId = 'stepAnalyticsContent';
-    else if (stepKey === 1) targetId = 'step1Content';
-    else if (stepKey === 2) targetId = 'step2Content';
-    else if (stepKey === 3) targetId = 'step3Content';
-    else if (stepKey === 0) targetId = 'step0Content';
 
     const targetSec = document.getElementById(targetId);
     if (targetSec) targetSec.classList.add('active');
 
     // Trigger tab-specific renders
-    if (stepKey === 'history') {
+    if (stepKey === 'roster' || stepKey === 1) {
+        renderSummonersGrid();
+    } else if (stepKey === 'history') {
         renderMatchesHistory();
     } else if (stepKey === 'analytics') {
         renderAnalyticsDashboard();
-    } else if (stepKey === 1) {
-        renderSummonersGrid();
-    } else if (stepKey === 2) {
-        renderSummonerChampTabs();
-        renderChampPoolEditor();
-    } else if (stepKey === 3) {
-        generate3Matches();
     }
 }
 
