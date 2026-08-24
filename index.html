@@ -23,7 +23,7 @@
             </div>
             <div class="logo-text">
                 <h1>LOL SQUAD TRACKER & ANALYTICS</h1>
-                <span class="sub-title">REGISTRO DE PLANTILLA (5-7 AMIGOS) & SINERGIAS DE EQUIPO</span>
+                <span class="sub-title">REGISTRO DE AMIGOS (5-7), LÍNEAS, CAMPEONES & SINERGIAS</span>
             </div>
         </div>
 
@@ -38,29 +38,29 @@
 
     <!-- Main Container -->
     <main class="main-container">
-        <!-- Main Navigation Tabs (3 Dedicated Sections) -->
+        <!-- Main Navigation Tabs (3 Core Sections) -->
         <nav class="stepper-nav">
             <button class="step-btn active" id="tabStep1" onclick="switchStep('roster')">
                 <span class="step-num"><i class="fa-solid fa-users-gear"></i></span>
-                <span class="step-label">1. Plantilla de Amigos (5-7 Jugadores)</span>
+                <span class="step-label">1. Plantilla de Amigos & Campeones</span>
             </button>
             <button class="step-btn" id="tabStepHistory" onclick="switchStep('history')">
                 <span class="step-num"><i class="fa-solid fa-scroll"></i></span>
-                <span class="step-label">2. Historial de Partidas</span>
+                <span class="step-label">2. Historial de Partidas (2+ Amigos)</span>
             </button>
             <button class="step-btn" id="tabStepAnalytics" onclick="switchStep('analytics')">
                 <span class="step-num"><i class="fa-solid fa-chart-line"></i></span>
-                <span class="step-label">3. Estadísticas y Sinergias</span>
+                <span class="step-label">3. Estadísticas & Matriz de Sinergias</span>
             </button>
         </nav>
 
         <!-- ========================================================
-             SECCIÓN 1: PLANTILLA DE AMIGOS (5 A 7+ INVOCADORES)
+             SECCIÓN 1: PLANTILLA DE AMIGOS & POOL DE CAMPEONES POR LÍNEA
              ======================================================== -->
         <section class="step-content active" id="stepRosterContent">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-users-gear"></i> Registro de Plantilla de Equipo (5 a 7 Amigos)</h2>
-                <p>Registra a los integrantes de tu grupo de LoL, sus nombres de invocador (`Nombre#TAG`), sus líneas de preferencia y los campeones que quiere jugar en cada rol.</p>
+                <h2><i class="fa-solid fa-users-gear"></i> Plantilla del Equipo: Invocadores, Líneas y Campeones</h2>
+                <p>Registra a cada uno de tus 5 a 7 amigos. Configura qué líneas prefiere jugar cada uno y qué campeones quiere usar en cada rol para medir su rendimiento conjunto.</p>
             </div>
 
             <!-- Roster Controls Bar -->
@@ -70,7 +70,7 @@
                         <i class="fa-solid fa-user-plus"></i> + Agregar Amigo a Plantilla
                     </button>
                     <button class="hextech-btn secondary" onclick="presetStandardTeam()">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Asignar Líneas Equilibradas
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Autocompletar Líneas y Campeones Meta
                     </button>
                 </div>
                 <button class="hextech-btn primary large-glow" onclick="saveRosterConfig()">
@@ -89,8 +89,8 @@
              ======================================================== -->
         <section class="step-content" id="stepHistoryContent">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-scroll"></i> Historial de Partidas de Equipo</h2>
-                <p>Registra manualmente las partidas o impórtalas de Riot API cuando jueguen en dúo, trío o equipo completo de 5.</p>
+                <h2><i class="fa-solid fa-scroll"></i> Registro e Historial de Partidas</h2>
+                <p>Registra las partidas jugadas cuando coincidan 2 o más amigos del grupo (dúos, tríos o equipo completo) o impórtalas con 1 clic desde Riot API.</p>
             </div>
 
             <!-- Action Controls Header -->
@@ -159,7 +159,7 @@
                 </div>
                 <div class="search-box small-search">
                     <i class="fa-solid fa-search"></i>
-                    <input type="text" id="historySearchInput" placeholder="Buscar por campeón o notas..." oninput="renderMatchesHistory()">
+                    <input type="text" id="historySearchInput" placeholder="Buscar por campeón, invocador o notas..." oninput="renderMatchesHistory()">
                 </div>
             </div>
 
@@ -170,18 +170,18 @@
         </section>
 
         <!-- ========================================================
-             SECCIÓN 3: ESTADÍSTICAS DISPONIBLES & SINERGIAS DE EQUIPO
+             SECCIÓN 3: ESTADÍSTICAS DISPONIBLES & MATRIZ DE SINERGIAS
              ======================================================== -->
         <section class="step-content" id="stepAnalyticsContent">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-chart-line"></i> Panel de Estadísticas y Sinergias del Equipo</h2>
-                <p>Analiza todas las métricas disponibles: Winrate por jugador, sinergia entre duplas de amigos, rendimiento por línea y notas acumuladas.</p>
+                <h2><i class="fa-solid fa-chart-line"></i> Panel de Estadísticas y Sinergias del Grupo</h2>
+                <p>Todas las estadísticas disponibles: Matriz de sinergia entre duplas de amigos, rendimiento individual por jugador, efectividad por línea y campeones más fuertes.</p>
             </div>
 
             <!-- Duo Synergy Matrix Card -->
             <div class="analytics-card full-card" style="margin-bottom: 1.5rem;">
                 <h3><i class="fa-solid fa-people-group"></i> Matriz de Sinergia entre Amigos (Dúos / Tríos)</h3>
-                <p class="subtitle-hint">Tasa de victorias y rendimiento cuando 2 o más amigos específicos juegan juntos en el mismo equipo.</p>
+                <p class="subtitle-hint">Tasa de victorias (% Winrate) y rendimiento cuando 2 o más amigos específicos juegan en la misma partida.</p>
                 <div class="synergy-grid" id="synergyMatrixContainer">
                     <!-- Injected via JS -->
                 </div>
@@ -190,9 +190,7 @@
             <div class="analytics-grid">
                 <!-- Left Column: Individual Player Stats -->
                 <div class="analytics-card wide-card">
-                    <h3><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <span><i class="fa-solid fa-users"></i> Desempeño Individual por Invocador</span>
-                    </div></h3>
+                    <h3><i class="fa-solid fa-users"></i> Desempeño Individual de Invocadores</h3>
                     <div class="table-responsive">
                         <table class="hextech-table">
                             <thead>
@@ -223,8 +221,8 @@
 
             <!-- Team Improvement Notes Feed -->
             <div class="analytics-card full-card">
-                <h3><i class="fa-solid fa-lightbulb"></i> Cuaderno de Aprendizaje & Consejos de Equipo</h3>
-                <p class="subtitle-hint">Observaciones acumuladas de las últimas partidas para revisar antes de entrar a cola.</p>
+                <h3><i class="fa-solid fa-lightbulb"></i> Cuaderno de Aprendizaje & Consejos del Equipo</h3>
+                <p class="subtitle-hint">Observaciones acumuladas de las partidas para revisar antes de entrar a cola clasificatoria.</p>
                 <div class="improvement-notes-feed" id="improvementNotesFeed">
                     <!-- Injected via JS -->
                 </div>
@@ -233,7 +231,7 @@
     </main>
 
     <!-- ========================================================
-         MODAL 1: REGISTRAR PARTIDA DE EQUIPO (PARTICIPANTES SELECCIONABLES)
+         MODAL 1: REGISTRAR PARTIDA (PARTICIPANTES SELECCIONABLES)
          ======================================================== -->
     <div class="modal-backdrop" id="matchRegisterModal">
         <div class="hextech-modal large-modal">
@@ -288,6 +286,38 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         MODAL 2: SELECTOR VISUAL DE CAMPEONES DE LOL
+         ======================================================== -->
+    <div class="modal-backdrop" id="champPickerModal">
+        <div class="hextech-modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-mask"></i> Seleccionar Campeón para <span id="modalTargetLabel">TOP</span></h3>
+                <button class="close-modal-btn" onclick="closeChampModal()">&times;</button>
+            </div>
+
+            <div class="modal-filters">
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="champSearchInput" placeholder="Buscar campeón (ej: Ahri, Yasuo, Darius)..." oninput="filterChampions()">
+                </div>
+                <div class="role-filter-pills" id="modalRoleFilters">
+                    <button class="pill active" onclick="setModalRoleFilter('ALL')">Todos</button>
+                    <button class="pill" onclick="setModalRoleFilter('Fighter')">Luchadores</button>
+                    <button class="pill" onclick="setModalRoleFilter('Mage')">Magos</button>
+                    <button class="pill" onclick="setModalRoleFilter('Assassin')">Asesinos</button>
+                    <button class="pill" onclick="setModalRoleFilter('Tank')">Tanques</button>
+                    <button class="pill" onclick="setModalRoleFilter('Marksman')">Tiradores</button>
+                    <button class="pill" onclick="setModalRoleFilter('Support')">Soportes</button>
+                </div>
+            </div>
+
+            <div class="modal-champions-grid" id="modalChampsGrid">
+                <!-- Champions list rendered dynamically -->
+            </div>
         </div>
     </div>
 

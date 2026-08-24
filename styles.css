@@ -2164,4 +2164,96 @@ body.hextech-theme {
     color: #ffffff;
 }
 
+/* Summoner Pool by Lane Cards */
+.summoner-pools-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.lane-pool-block {
+    background: rgba(1, 10, 19, 0.6);
+    border: 1px solid rgba(200, 170, 110, 0.25);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.lane-pool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--gold-primary);
+}
+
+.lane-pool-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.champ-tag-chip {
+    background: rgba(9, 20, 40, 0.9);
+    border: 1px solid var(--gold-dark);
+    padding: 0.2rem 0.5rem 0.2rem 0.3rem;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.champ-tag-chip:hover {
+    border-color: var(--cyan-hextech);
+}
+
+.champ-tag-img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--gold-primary);
+}
+
+.remove-champ-tag-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0 0.2rem;
+    display: flex;
+    align-items: center;
+}
+
+.remove-champ-tag-btn:hover {
+    color: #ff4757;
+}
+
+.add-champ-to-lane-btn {
+    background: rgba(10, 200, 185, 0.1);
+    border: 1px dashed var(--cyan-hextech);
+    color: var(--cyan-hextech);
+    padding: 0.25rem 0.6rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-champ-to-lane-btn:hover {
+    background: var(--cyan-hextech);
+    color: #010a13;
+    font-weight: 700;
+}
+
+
 
