@@ -38,17 +38,23 @@ const RIOT_SUMMONER_PRESETS = {
     'KERIA#KR1': { iconId: 539, level: 690, mainChamps: ['Thresh', 'Lux', 'Braum', 'Nami', 'Bard'], region: 'KR' }
 };
 
-// Global App State - Default start on Step 1 (Invocadores y Líneas)
+// Global App State - Default start on Match History Tab ('history')
 const state = {
     version: '14.1.1',
     championsDict: {},
     championsList: [],
-    currentStep: 1, // Start on Step 1 directly!
+    currentStep: 'history', // Start on History Tracker by default!
     activeMatchView: 1,
     activeChampEditSummonerId: 1,
     appMode: 'MYSTERY',
     forceSummaryUnlocked: false,
     
+    // Match Tracker & Cloud Sync Extensions
+    matchesHistory: [],
+    historyFilterResult: 'ALL',
+    historySearchQuery: '',
+    cloudSyncStatus: 'online',
+
     // Single search cache
     activeSearchedSummoner: null,
 
@@ -59,11 +65,11 @@ const state = {
 
     // 5 Summoners Data
     summoners: [
-        { id: 1, name: 'Invocador 1', profileIconId: 7117, level: 1124, verified: false, preferredLanes: [], pools: {} },
-        { id: 2, name: 'Invocador 2', profileIconId: 54, level: 759, verified: false, preferredLanes: [], pools: {} },
-        { id: 3, name: 'Invocador 3', profileIconId: 78, level: 388, verified: false, preferredLanes: [], pools: {} },
-        { id: 4, name: 'Invocador 4', profileIconId: 92, level: 424, verified: false, preferredLanes: [], pools: {} },
-        { id: 5, name: 'Invocador 5', profileIconId: 105, level: 462, verified: false, preferredLanes: [], pools: {} }
+        { id: 1, name: 'Layvel', profileIconId: 7117, level: 1124, verified: false, preferredLanes: ['TOP', 'MID', 'BOT'], mainChamps: ['Riven', 'Yasuo', 'Lucian'], pools: {} },
+        { id: 2, name: 'Invocador 2', profileIconId: 54, level: 759, verified: false, preferredLanes: ['JUNGLE', 'MID', 'BOT'], mainChamps: ['LeeSin', 'JarvanIV', 'Viego'], pools: {} },
+        { id: 3, name: 'Invocador 3', profileIconId: 78, level: 388, verified: false, preferredLanes: ['MID', 'BOT', 'SUPPORT'], mainChamps: ['Yasuo', 'Ahri', 'Syndra'], pools: {} },
+        { id: 4, name: 'Invocador 4', profileIconId: 92, level: 424, verified: false, preferredLanes: ['TOP', 'BOT', 'SUPPORT'], mainChamps: ['Jhin', 'Kaisa', 'Samira'], pools: {} },
+        { id: 5, name: 'Invocador 5', profileIconId: 105, level: 462, verified: false, preferredLanes: ['TOP', 'JUNGLE', 'SUPPORT'], mainChamps: ['Thresh', 'Nautilus', 'Leona'], pools: {} }
     ],
 
     // Smart suggestion cache
@@ -88,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initApp() {
     presetStandardTeam();
     await loadRiotDataDragon();
+    await loadMatchesFromCloud();
+    switchStep('history');
 }
 
 // STEP 0: DEDICATED SINGLE SUMMONER SEARCH (TESTER TAB)
@@ -518,28 +526,539 @@ function validateStep1AndProceed() {
 }
 
 // STEP NAVIGATION SWITCHER
-function switchStep(stepNum) {
-    state.currentStep = stepNum;
+function switchStep(stepKey) {
+    state.currentStep = stepKey;
 
-    const stepOrder = [1, 2, 3, 0];
-    
-    document.querySelectorAll('.stepper-nav .step-btn').forEach((btn, idx) => {
-        const btnStep = stepOrder[idx];
-        btn.classList.toggle('active', btnStep === stepNum);
+    // Toggle active tab buttons
+    document.querySelectorAll('.stepper-nav .step-btn').forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        const isMatch = onclickAttr.includes(`'${stepKey}'`) || onclickAttr.includes(`(${stepKey})`);
+        btn.classList.toggle('active', isMatch);
     });
 
+    // Toggle active content sections
     document.querySelectorAll('.step-content').forEach(sec => {
-        const secId = sec.id;
-        const targetId = `step${stepNum}Content`;
-        sec.classList.toggle('active', secId === targetId);
+        sec.classList.remove('active');
     });
 
-    if (stepNum === 2) {
+    let targetId = 'stepHistoryContent';
+    if (stepKey === 'history') targetId = 'stepHistoryContent';
+    else if (stepKey === 'analytics') targetId = 'stepAnalyticsContent';
+    else if (stepKey === 1) targetId = 'step1Content';
+    else if (stepKey === 2) targetId = 'step2Content';
+    else if (stepKey === 3) targetId = 'step3Content';
+    else if (stepKey === 0) targetId = 'step0Content';
+
+    const targetSec = document.getElementById(targetId);
+    if (targetSec) targetSec.classList.add('active');
+
+    // Trigger tab-specific renders
+    if (stepKey === 'history') {
+        renderMatchesHistory();
+    } else if (stepKey === 'analytics') {
+        renderAnalyticsDashboard();
+    } else if (stepKey === 1) {
+        renderSummonersGrid();
+    } else if (stepKey === 2) {
         renderSummonerChampTabs();
         renderChampPoolEditor();
-    } else if (stepNum === 3) {
+    } else if (stepKey === 3) {
         generate3Matches();
     }
+}
+
+/* ===================================================
+   MATCH TRACKER & CLOUD PERSISTENCE ENGINE
+   =================================================== */
+
+async function loadMatchesFromCloud() {
+    updateCloudStatusBadge('syncing', 'Sincronizando...');
+    try {
+        const resp = await fetch('/api/matches');
+        const data = await resp.json();
+        if (data && data.success && Array.isArray(data.matches)) {
+            state.matchesHistory = data.matches;
+            localStorage.setItem('LOL_TEAM_MATCHES_HISTORY', JSON.stringify(state.matchesHistory));
+            updateCloudStatusBadge('online', '🟢 Sincronizado en Nube');
+        } else {
+            throw new Error('Fallback to local storage');
+        }
+    } catch (e) {
+        console.warn('Cloud sync offline/warning, loading local storage:', e.message);
+        const local = localStorage.getItem('LOL_TEAM_MATCHES_HISTORY');
+        if (local) {
+            try { state.matchesHistory = JSON.parse(local); } catch(err){}
+        }
+        updateCloudStatusBadge('online', '🟡 Guardado Local Activo');
+    }
+
+    if (state.currentStep === 'history') renderMatchesHistory();
+    else if (state.currentStep === 'analytics') renderAnalyticsDashboard();
+}
+
+function updateCloudStatusBadge(status, text) {
+    const badge = document.getElementById('cloudStatusBadge');
+    const textEl = document.getElementById('cloudStatusText');
+    if (textEl) textEl.textContent = text;
+    if (badge) {
+        badge.className = `api-status-badge status-${status}`;
+    }
+}
+
+async function saveMatchToCloud(matchObj) {
+    updateCloudStatusBadge('syncing', 'Guardando...');
+    
+    // Add locally first for instant UI response
+    state.matchesHistory.unshift(matchObj);
+    localStorage.setItem('LOL_TEAM_MATCHES_HISTORY', JSON.stringify(state.matchesHistory));
+
+    try {
+        const resp = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ADD_MATCH', match: matchObj })
+        });
+        const data = await resp.json();
+        if (data && data.success) {
+            updateCloudStatusBadge('online', '🟢 Sincronizado en Nube');
+        }
+    } catch (e) {
+        console.warn('Network save issue, persisted locally:', e);
+        updateCloudStatusBadge('online', '🟡 Guardado Localmente');
+    }
+
+    renderMatchesHistory();
+    renderAnalyticsDashboard();
+}
+
+async function deleteMatchFromHistory(matchId) {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta partida del registro del equipo?')) return;
+
+    state.matchesHistory = state.matchesHistory.filter(m => m.id !== matchId);
+    localStorage.setItem('LOL_TEAM_MATCHES_HISTORY', JSON.stringify(state.matchesHistory));
+
+    try {
+        await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'DELETE_MATCH', matchId: matchId })
+        });
+    } catch (e) {}
+
+    renderMatchesHistory();
+    renderAnalyticsDashboard();
+}
+
+/* ===================================================
+   MATCH HISTORY RENDERING & FILTERS
+   =================================================== */
+
+function renderMatchesHistory() {
+    const listEl = document.getElementById('matchesHistoryList');
+    if (!listEl) return;
+
+    // Calculate KPIs
+    const total = state.matchesHistory.length;
+    const victories = state.matchesHistory.filter(m => m.result === 'VICTORY').length;
+    const defeats = state.matchesHistory.filter(m => m.result === 'DEFEAT').length;
+    const winrate = total > 0 ? Math.round((victories / total) * 100) : 0;
+
+    const elTotal = document.getElementById('kpiTotalMatches');
+    const elVic = document.getElementById('kpiVictories');
+    const elDef = document.getElementById('kpiDefeats');
+    const elWr = document.getElementById('kpiWinrate');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elVic) elVic.textContent = victories;
+    if (elDef) elDef.textContent = defeats;
+    if (elWr) elWr.textContent = `${winrate}%`;
+
+    // Filter matches
+    const search = (document.getElementById('historySearchInput')?.value || '').toLowerCase().trim();
+    let filtered = state.matchesHistory.filter(m => {
+        if (state.historyFilterResult === 'VICTORY' && m.result !== 'VICTORY') return false;
+        if (state.historyFilterResult === 'DEFEAT' && m.result !== 'DEFEAT') return false;
+        if (search) {
+            const hasChamp = m.players.some(p => (p.champion || '').toLowerCase().includes(search));
+            const hasNotes = (m.notes || '').toLowerCase().includes(search);
+            const hasSummoner = m.players.some(p => (p.summonerName || '').toLowerCase().includes(search));
+            if (!hasChamp && !hasNotes && !hasSummoner) return false;
+        }
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: rgba(9,20,40,0.6); border: 1px dashed var(--gold-dark); border-radius: 8px;">
+                <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: var(--gold-primary); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--gold-bright); font-family: var(--font-heading); margin-bottom: 0.5rem;">No hay partidas registradas</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Comienza anotando las partidas de tu equipo para ver reflejado su progreso y estadísticas en tiempo real.</p>
+                <button class="hextech-btn primary large-glow" onclick="openRegisterMatchModal()">
+                    <i class="fa-solid fa-plus-circle"></i> Registrar Primera Partida
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    listEl.innerHTML = filtered.map(m => {
+        const isVictory = m.result === 'VICTORY';
+        const dateStr = new Date(m.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        const playersHTML = m.players.map(p => {
+            const cObj = state.championsDict[p.champion] || { id: p.champion, name: p.champion };
+            const champImg = cObj.id ? `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/champion/${cObj.id}.png` : 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/7117.png';
+            const kdaText = `${p.kills} / ${p.deaths} / ${p.assists}`;
+            return `
+                <div class="player-match-badge">
+                    <img src="${champImg}" class="player-champ-icon" alt="${p.champion}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/7117.png'">
+                    <div class="player-badge-info">
+                        <span class="player-name-text">${escapeHtml(p.summonerName)}</span>
+                        <span class="player-role-line"><i class="fa-solid fa-shield"></i> ${p.lane} - ${escapeHtml(p.champion)}</span>
+                        <span class="player-kda-stat">KDA: ${kdaText}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const notesHTML = m.notes ? `
+            <div class="match-card-notes">
+                <i class="fa-solid fa-comment-dots"></i> <strong>Puntos de Aprendizaje:</strong> ${escapeHtml(m.notes)}
+            </div>
+        ` : '';
+
+        return `
+            <div class="match-history-card ${isVictory ? 'victory-card' : 'defeat-card'}">
+                <div class="match-card-header">
+                    <div class="match-header-left">
+                        <span class="badge-result ${isVictory ? 'victory' : 'defeat'}">
+                            <i class="fa-solid ${isVictory ? 'fa-trophy' : 'fa-skull'}"></i> ${isVictory ? 'VICTORIA' : 'DERROTA'}
+                        </span>
+                        <span class="match-date-info"><i class="fa-solid fa-calendar"></i> ${dateStr}</span>
+                    </div>
+                    <div class="match-header-right">
+                        <span class="match-duration-tag"><i class="fa-solid fa-clock"></i> ${escapeHtml(m.duration || '25 min')}</span>
+                        <button class="delete-match-btn" onclick="deleteMatchFromHistory('${m.id}')" title="Eliminar partida">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="match-players-row">
+                    ${playersHTML}
+                </div>
+                ${notesHTML}
+            </div>
+        `;
+    }).join('');
+}
+
+function filterHistoryResult(res) {
+    state.historyFilterResult = res;
+    document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+    if (res === 'ALL') document.getElementById('filterResultAll')?.classList.add('active');
+    else if (res === 'VICTORY') document.getElementById('filterResultVictory')?.classList.add('active');
+    else if (res === 'DEFEAT') document.getElementById('filterResultDefeat')?.classList.add('active');
+    renderMatchesHistory();
+}
+
+/* ===================================================
+   REGISTER MATCH MODAL HANDLING
+   =================================================== */
+
+function openRegisterMatchModal() {
+    const grid = document.getElementById('registerMatchPlayersGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    const defaultLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
+
+    state.summoners.forEach((s, i) => {
+        const laneId = s.preferredLanes[0] || defaultLanes[i] || 'MID';
+        const row = document.createElement('div');
+        row.className = 'player-input-row';
+        row.innerHTML = `
+            <div class="player-name-badge">
+                <i class="fa-solid fa-user-shield"></i>
+                <input type="text" class="select-champ-input" name="playerSummonerName_${i}" value="${escapeHtml(s.name)}" style="width: 100px;">
+            </div>
+            <select class="select-line-input" name="playerLane_${i}">
+                <option value="TOP" ${laneId === 'TOP' ? 'selected' : ''}>Top</option>
+                <option value="JUNGLE" ${laneId === 'JUNGLE' ? 'selected' : ''}>Jungla</option>
+                <option value="MID" ${laneId === 'MID' ? 'selected' : ''}>Mid</option>
+                <option value="BOT" ${laneId === 'BOT' ? 'selected' : ''}>Bot / ADC</option>
+                <option value="SUPPORT" ${laneId === 'SUPPORT' ? 'selected' : ''}>Soporte</option>
+            </select>
+            <input type="text" class="select-champ-input" name="playerChampion_${i}" placeholder="Campeón (ej: Ahri, Riven...)" value="${s.mainChamps?.[0] || 'Ahri'}">
+            <div class="kda-input-group">
+                <input type="number" name="playerKills_${i}" value="5" min="0">
+                <span class="kda-slash">/</span>
+                <input type="number" name="playerDeaths_${i}" value="2" min="0">
+                <span class="kda-slash">/</span>
+                <input type="number" name="playerAssists_${i}" value="8" min="0">
+            </div>
+        `;
+        grid.appendChild(row);
+    });
+
+    document.getElementById('matchRegisterModal').style.display = 'flex';
+}
+
+function closeMatchRegisterModal() {
+    document.getElementById('matchRegisterModal').style.display = 'none';
+}
+
+function handleSaveMatchSubmit(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const result = form.querySelector('input[name="matchResult"]:checked')?.value || 'VICTORY';
+    const duration = document.getElementById('matchDurationInput')?.value || '25 min';
+    const notes = document.getElementById('matchNotesInput')?.value || '';
+
+    const players = [];
+    for (let i = 0; i < 5; i++) {
+        const sumName = form.querySelector(`input[name="playerSummonerName_${i}"]`)?.value || `Invocador ${i+1}`;
+        const lane = form.querySelector(`select[name="playerLane_${i}"]`)?.value || 'MID';
+        const champ = form.querySelector(`input[name="playerChampion_${i}"]`)?.value || 'Ahri';
+        const kills = parseInt(form.querySelector(`input[name="playerKills_${i}"]`)?.value || 0);
+        const deaths = parseInt(form.querySelector(`input[name="playerDeaths_${i}"]`)?.value || 0);
+        const assists = parseInt(form.querySelector(`input[name="playerAssists_${i}"]`)?.value || 0);
+
+        players.push({
+            summonerName: sumName,
+            lane: lane,
+            champion: champ,
+            kills: kills,
+            deaths: deaths,
+            assists: assists
+        });
+    }
+
+    const newMatch = {
+        id: 'match-' + Date.now(),
+        date: new Date().toISOString(),
+        duration: duration,
+        result: result,
+        notes: notes,
+        players: players
+    };
+
+    saveMatchToCloud(newMatch);
+    closeMatchRegisterModal();
+    switchStep('history');
+}
+
+/* ===================================================
+   ANALYTICS DASHBOARD ENGINE
+   =================================================== */
+
+function renderAnalyticsDashboard() {
+    const tbody = document.getElementById('analyticsSummonersTbody');
+    const lanesContainer = document.getElementById('lanesWinrateContainer');
+    const notesFeed = document.getElementById('improvementNotesFeed');
+    if (!tbody || !lanesContainer) return;
+
+    // 1. Calculate per-summoner stats
+    const summonerStats = {};
+    state.summoners.forEach(s => {
+        summonerStats[s.name.toLowerCase()] = {
+            displayName: s.name,
+            totalGames: 0, wins: 0, losses: 0,
+            totalKills: 0, totalDeaths: 0, totalAssists: 0,
+            championsCount: {}
+        };
+    });
+
+    state.matchesHistory.forEach(m => {
+        const isWin = m.result === 'VICTORY';
+        m.players.forEach(p => {
+            const key = (p.summonerName || '').toLowerCase();
+            if (!summonerStats[key]) {
+                summonerStats[key] = {
+                    displayName: p.summonerName,
+                    totalGames: 0, wins: 0, losses: 0,
+                    totalKills: 0, totalDeaths: 0, totalAssists: 0,
+                    championsCount: {}
+                };
+            }
+            const st = summonerStats[key];
+            st.totalGames++;
+            if (isWin) st.wins++; else st.losses++;
+            st.totalKills += p.kills || 0;
+            st.totalDeaths += p.deaths || 0;
+            st.totalAssists += p.assists || 0;
+            if (p.champion) {
+                st.championsCount[p.champion] = (st.championsCount[p.champion] || 0) + 1;
+            }
+        });
+    });
+
+    tbody.innerHTML = Object.values(summonerStats).map(st => {
+        const wr = st.totalGames > 0 ? Math.round((st.wins / st.totalGames) * 100) : 0;
+        const avgKda = st.totalGames > 0 
+            ? ((st.totalKills + st.totalAssists) / Math.max(1, st.totalDeaths)).toFixed(1)
+            : '0.0';
+        
+        let favChamp = '-';
+        let maxCount = 0;
+        Object.entries(st.championsCount).forEach(([ch, cnt]) => {
+            if (cnt > maxCount) { maxCount = cnt; favChamp = ch; }
+        });
+
+        return `
+            <tr>
+                <td><strong>${escapeHtml(st.displayName)}</strong></td>
+                <td>${st.totalGames}</td>
+                <td><span style="color: #1dd1a1;">${st.wins}V</span> / <span style="color: #ff4757;">${st.losses}D</span></td>
+                <td><strong style="color: var(--cyan-hextech);">${wr}%</strong></td>
+                <td>${avgKda}</td>
+                <td>${escapeHtml(favChamp)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // 2. Calculate lane winrates
+    const laneStats = {
+        TOP: { games: 0, wins: 0 },
+        JUNGLE: { games: 0, wins: 0 },
+        MID: { games: 0, wins: 0 },
+        BOT: { games: 0, wins: 0 },
+        SUPPORT: { games: 0, wins: 0 }
+    };
+
+    state.matchesHistory.forEach(m => {
+        const isWin = m.result === 'VICTORY';
+        m.players.forEach(p => {
+            if (laneStats[p.lane]) {
+                laneStats[p.lane].games++;
+                if (isWin) laneStats[p.lane].wins++;
+            }
+        });
+    });
+
+    const laneNames = { TOP: 'Top Lane', JUNGLE: 'Jungla', MID: 'Mid Lane', BOT: 'Bot / ADC', SUPPORT: 'Soporte' };
+    const laneIcons = { TOP: 'fa-shield-halved', JUNGLE: 'fa-tree', MID: 'fa-wand-magic-sparkles', BOT: 'fa-crosshairs', SUPPORT: 'fa-heart' };
+
+    lanesContainer.innerHTML = Object.keys(laneStats).map(lKey => {
+        const l = laneStats[lKey];
+        const wr = l.games > 0 ? Math.round((l.wins / l.games) * 100) : 0;
+        return `
+            <div class="lane-winrate-item">
+                <div class="lane-win-header">
+                    <span class="lane-name-label"><i class="fa-solid ${laneIcons[lKey]}"></i> ${laneNames[lKey]}</span>
+                    <span class="lane-win-rate-value">${wr}% (${l.wins}/${l.games})</span>
+                </div>
+                <div class="winrate-bar-container">
+                    <div class="winrate-bar-fill ${wr >= 60 ? 'high-wr' : ''}" style="width: ${wr}%;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 3. Improvement Notes Feed
+    const allNotes = state.matchesHistory.filter(m => m.notes && m.notes.trim());
+    if (!notesFeed) return;
+
+    if (allNotes.length === 0) {
+        notesFeed.innerHTML = `<p style="color: var(--text-secondary); font-style: italic;">No hay notas grabadas aún. Escribe puntos a mejorar cuando registres partidas.</p>`;
+    } else {
+        notesFeed.innerHTML = allNotes.map(m => {
+            const dateStr = new Date(m.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+            return `
+                <div class="note-item-card">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <div>
+                        <strong style="color: var(--gold-bright); font-size: 0.85rem;">Partida (${dateStr} - ${m.result}):</strong>
+                        <p style="color: var(--text-primary); margin-top: 0.2rem;">${escapeHtml(m.notes)}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+/* ===================================================
+   CONVERT DRAFT SIMULATION TO MATCH RECORD & BACKUPS
+   =================================================== */
+
+function convertDraftToMatchRecord() {
+    const matchNum = state.activeMatchView;
+    if (!state.generatedMatches || !state.generatedMatches[matchNum - 1]) {
+        alert('Primero debes generar las 3 partidas de borrador.');
+        return;
+    }
+
+    const draft = state.generatedMatches[matchNum - 1];
+    openRegisterMatchModal();
+
+    // Pre-fill fields from draft
+    const form = document.getElementById('matchRegisterForm');
+    if (!form) return;
+
+    draft.team.forEach((player, i) => {
+        const sumObj = state.summoners.find(s => s.id === player.summonerId);
+        const nameInput = form.querySelector(`input[name="playerSummonerName_${i}"]`);
+        const laneSelect = form.querySelector(`select[name="playerLane_${i}"]`);
+        const champInput = form.querySelector(`input[name="playerChampion_${i}"]`);
+
+        if (nameInput && sumObj) nameInput.value = sumObj.name;
+        if (laneSelect) laneSelect.value = player.laneId;
+        if (champInput) champInput.value = player.champKey;
+    });
+}
+
+function exportMatchesJSON() {
+    const data = {
+        app: "LOL_TEAM_TRACKER",
+        version: state.version,
+        timestamp: new Date().toISOString(),
+        summoners: state.summoners,
+        matches: state.matchesHistory
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+    const a = document.createElement('a');
+    a.href = dataStr;
+    a.download = `lol_team_backup_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+function importMatchesJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            if (parsed && Array.isArray(parsed.matches)) {
+                state.matchesHistory = parsed.matches;
+                if (Array.isArray(parsed.summoners)) {
+                    state.summoners = parsed.summoners;
+                }
+                localStorage.setItem('LOL_TEAM_MATCHES_HISTORY', JSON.stringify(state.matchesHistory));
+                
+                // Sync to cloud
+                try {
+                    await fetch('/api/matches', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'IMPORT_ALL', matches: state.matchesHistory })
+                    });
+                } catch(err) {}
+
+                alert('¡Respaldo importado correctamente!');
+                renderMatchesHistory();
+                renderAnalyticsDashboard();
+            } else {
+                alert('El archivo JSON no contiene una estructura válida de historial de partidas.');
+            }
+        } catch (err) {
+            alert('Error al leer el archivo JSON: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
 }
 
 // STEP 2: CHAMPION POOL SELECTION PER SUMMONER

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoL Draft & Line Simulator - League of Legends</title>
+    <title>LoL Team Tracker & Draft Simulator - League of Legends</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,37 +22,46 @@
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <div class="logo-text">
-                <h1>SIMULADOR DE LÍNEAS & CAMPEONES</h1>
-                <span class="sub-title">RIOT GAMES API EN VIVO</span>
+                <h1>TRACKER DE EQUIPO & DRAFT SIMULATOR</h1>
+                <span class="sub-title">REGISTRO DE PARTIDAS & ANÁLISIS EN VIVO</span>
             </div>
         </div>
 
         <div class="header-right">
+            <!-- Cloud Connection Status Badge -->
+            <div class="api-status-badge status-online" id="cloudStatusBadge" title="Partidas sincronizadas automáticamente en la nube para todo el equipo">
+                <span class="pulse-dot"></span>
+                <span id="cloudStatusText">🟢 Sincronizado en Nube</span>
+            </div>
+
             <!-- Mode Switcher -->
             <div class="mode-toggle-group">
                 <span class="mode-label">Modo Tarjetas:</span>
                 <button class="mode-btn active" id="modeMystery" onclick="setAppMode('MYSTERY')">
-                    <i class="fa-solid fa-box-open"></i> Revelación Misteriosa
+                    <i class="fa-solid fa-box-open"></i> Revelación
                 </button>
                 <button class="mode-btn" id="modeStandard" onclick="setAppMode('STANDARD')">
-                    <i class="fa-solid fa-eye"></i> Revelado (Estándar)
+                    <i class="fa-solid fa-eye"></i> Estándar
                 </button>
-            </div>
-
-            <div class="api-status-badge" id="apiStatusBadge">
-                <span class="pulse-dot"></span>
-                <span id="apiStatusText">Cargando Data Dragon API...</span>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
     <main class="main-container">
-        <!-- Step Navigation Tabs -->
+        <!-- Main Navigation Tabs -->
         <nav class="stepper-nav">
-            <button class="step-btn active" id="tabStep1" onclick="switchStep(1)">
+            <button class="step-btn active" id="tabStepHistory" onclick="switchStep('history')">
+                <span class="step-num"><i class="fa-solid fa-scroll"></i></span>
+                <span class="step-label">Historial de Partidas</span>
+            </button>
+            <button class="step-btn" id="tabStepAnalytics" onclick="switchStep('analytics')">
+                <span class="step-num"><i class="fa-solid fa-chart-line"></i></span>
+                <span class="step-label">Análisis de Equipo</span>
+            </button>
+            <button class="step-btn" id="tabStep1" onclick="switchStep(1)">
                 <span class="step-num">1</span>
-                <span class="step-label">Invocadores y Líneas</span>
+                <span class="step-label">Equipo e Invocadores</span>
             </button>
             <button class="step-btn" id="tabStep2" onclick="switchStep(2)">
                 <span class="step-num">2</span>
@@ -60,7 +69,7 @@
             </button>
             <button class="step-btn" id="tabStep3" onclick="switchStep(3)">
                 <span class="step-num">3</span>
-                <span class="step-label">Simulación 3 Partidas</span>
+                <span class="step-label">Simulador 3 Drafts</span>
             </button>
             <button class="step-btn" id="tabStep0" onclick="switchStep(0)">
                 <span class="step-num"><i class="fa-solid fa-satellite-dish"></i></span>
@@ -69,26 +78,148 @@
         </nav>
 
         <!-- Validation Alert & Smart Suggestions Banner -->
-        <div class="validation-banner" id="validationBanner">
+        <div class="validation-banner" id="validationBanner" style="display: none;">
             <div class="banner-main">
                 <div class="banner-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="banner-message" id="validationMessage">
-                    Ingresa los nombres de tus 5 invocadores o usa el botón **¡Generar 3 Partidas Aleatorias!**...
+                    Información de equipo configurada correctamente.
                 </div>
-            </div>
-            <div class="smart-suggestion-box" id="smartSuggestionBox" style="display: none;">
-                <div class="suggestion-header">
-                    <i class="fa-solid fa-lightbulb"></i> Sugerencia Inteligente:
-                </div>
-                <div class="suggestion-content" id="smartSuggestionText"></div>
-                <button class="hextech-btn small secondary" onclick="applySmartSuggestion()">
-                    <i class="fa-solid fa-check-double"></i> Aplicar Sugerencia
-                </button>
             </div>
         </div>
 
-        <!-- STEP 1: SUMMONER LANE SELECTION (INITIAL DEFAULT VIEW!) -->
-        <section class="step-content active" id="step1Content">
+        <!-- ========================================================
+             TAB 10: HISTORIAL DE PARTIDAS DE EQUIPO (DEFAULT TAB)
+             ======================================================== -->
+        <section class="step-content active" id="stepHistoryContent">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-scroll"></i> Registro de Partidas de Equipo</h2>
+                <p>Guarda el resultado de cada partida jugada con tus amigos, registra el KDA individual de cada invocador y anota los puntos a mejorar para seguir subiendo como equipo.</p>
+            </div>
+
+            <!-- Action Controls Header -->
+            <div class="tracker-action-bar">
+                <button class="hextech-btn primary large-glow" onclick="openRegisterMatchModal()">
+                    <i class="fa-solid fa-plus-circle"></i> + Registrar Nueva Partida
+                </button>
+                
+                <div class="tracker-sub-actions">
+                    <button class="hextech-btn secondary" onclick="loadMatchesFromCloud()" title="Descargar la información más reciente de la nube">
+                        <i class="fa-solid fa-rotate"></i> Sincronizar Nube
+                    </button>
+                    <button class="hextech-btn secondary" onclick="exportMatchesJSON()" title="Descargar respaldo local en JSON">
+                        <i class="fa-solid fa-download"></i> Respando JSON
+                    </button>
+                    <label class="hextech-btn secondary" title="Cargar archivo JSON guardado previamente">
+                        <i class="fa-solid fa-upload"></i> Importar Backup
+                        <input type="file" id="importJsonInput" accept=".json" style="display:none" onchange="importMatchesJSON(event)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Summary KPI Bar -->
+            <div class="history-summary-grid">
+                <div class="kpi-card gold-border">
+                    <div class="kpi-icon"><i class="fa-solid fa-gamepad"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-value" id="kpiTotalMatches">0</span>
+                        <span class="kpi-label">Partidas Registradas</span>
+                    </div>
+                </div>
+                <div class="kpi-card victory-border">
+                    <div class="kpi-icon victory-color"><i class="fa-solid fa-trophy"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-value victory-color" id="kpiVictories">0</span>
+                        <span class="kpi-label">Victorias</span>
+                    </div>
+                </div>
+                <div class="kpi-card defeat-border">
+                    <div class="kpi-icon defeat-color"><i class="fa-solid fa-skull"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-value defeat-color" id="kpiDefeats">0</span>
+                        <span class="kpi-label">Derrotas</span>
+                    </div>
+                </div>
+                <div class="kpi-card cyan-border">
+                    <div class="kpi-icon cyan-color"><i class="fa-solid fa-chart-pie"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-value cyan-color" id="kpiWinrate">0%</span>
+                        <span class="kpi-label">Winrate Global</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="history-filters-bar">
+                <div class="filter-pills">
+                    <button class="pill active" id="filterResultAll" onclick="filterHistoryResult('ALL')">Todas</button>
+                    <button class="pill victory-pill" id="filterResultVictory" onclick="filterHistoryResult('VICTORY')">Victorias</button>
+                    <button class="pill defeat-pill" id="filterResultDefeat" onclick="filterHistoryResult('DEFEAT')">Derrotas</button>
+                </div>
+                <div class="search-box small-search">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="historySearchInput" placeholder="Buscar por campeón o notas..." oninput="renderMatchesHistory()">
+                </div>
+            </div>
+
+            <!-- Matches History List -->
+            <div class="matches-history-list" id="matchesHistoryList">
+                <!-- Dynamically injected via JS -->
+            </div>
+        </section>
+
+        <!-- ========================================================
+             TAB 11: ANÁLISIS DE EQUIPO Y ESTADÍSTICAS
+             ======================================================== -->
+        <section class="step-content" id="stepAnalyticsContent">
+            <div class="section-intro">
+                <h2><i class="fa-solid fa-chart-line"></i> Análisis de Rendimiento del Equipo</h2>
+                <p>Descubre qué líneas ganan más partidas, los campeones con mayor KDA y los consejos clave anotados durante los juegos.</p>
+            </div>
+
+            <div class="analytics-grid">
+                <!-- Left Column: Individual Player Stats -->
+                <div class="analytics-card wide-card">
+                    <h3><i class="fa-solid fa-users"></i> Rendimiento por Invocador</h3>
+                    <div class="table-responsive">
+                        <table class="hextech-table">
+                            <thead>
+                                <tr>
+                                    <th>Invocador</th>
+                                    <th>Partidas</th>
+                                    <th>V / D</th>
+                                    <th>Winrate %</th>
+                                    <th>KDA Promedio</th>
+                                    <th>Campeón Favorito</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analyticsSummonersTbody">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Column: Line / Role Breakdown -->
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-map-location-dot"></i> Winrate por Línea / Rol</h3>
+                    <div class="lanes-winrate-container" id="lanesWinrateContainer">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Improvement Notes Feed -->
+            <div class="analytics-card full-card">
+                <h3><i class="fa-solid fa-lightbulb"></i> Cuaderno de Aprendizaje & Consejos del Equipo</h3>
+                <p class="subtitle-hint">Observaciones acumuladas de las últimas partidas para revisar antes de entrar a cola.</p>
+                <div class="improvement-notes-feed" id="improvementNotesFeed">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 1: SUMMONER LANE SELECTION -->
+        <section class="step-content" id="step1Content">
             <div class="section-intro">
                 <h2><i class="fa-solid fa-users"></i> Configuración del Equipo de Invocadores</h2>
                 <p>Escribe los nombres de los 5 invocadores y sus líneas o usa la aleatoriedad rápida para generar las 3 partidas al instante.</p>
@@ -175,6 +306,9 @@
                     <button class="hextech-btn secondary small" onclick="resetMysteryCards()">
                         <i class="fa-solid fa-eye-slash"></i> Ocultar Cartas
                     </button>
+                    <button class="hextech-btn primary small glow-button" onclick="convertDraftToMatchRecord()">
+                        <i class="fa-solid fa-plus-circle"></i> + Guardar como Partida Jugada
+                    </button>
                 </div>
 
                 <button class="hextech-btn secondary icon-only" onclick="generate3Matches()" title="Regenerar Variación">
@@ -217,11 +351,11 @@
             </div>
         </section>
 
-        <!-- STEP 0: DEDICATED RIOT API SUMMONER SEARCH TAB (OPTIONAL UTILITY TAB) -->
+        <!-- STEP 0: DEDICATED RIOT API SUMMONER SEARCH TAB -->
         <section class="step-content" id="step0Content">
             <div class="section-intro">
                 <h2><i class="fa-solid fa-satellite-dish"></i> Buscador de Invocador Riot API (LAS / LAN / NA / EUW)</h2>
-                <p>Ingresa tu **Nombre#Tag** (ej: <strong>Layvel#LAS</strong>) para traer tu foto de perfil oficial y tus campeones con mayor maestría (Riven, Yasuo, Lucian, Jhin, Samira).</p>
+                <p>Ingresa tu **Nombre#Tag** (ej: <strong>Layvel#LAS</strong>) para traer tu foto de perfil oficial y tus campeones con mayor maestría.</p>
             </div>
 
             <div class="riot-api-tester-card">
@@ -261,7 +395,68 @@
         </section>
     </main>
 
-    <!-- CHAMPION SELECTION MODAL -->
+    <!-- ========================================================
+         MODAL 1: REGISTRAR NUEVA PARTIDA EN EL TRACKER
+         ======================================================== -->
+    <div class="modal-backdrop" id="matchRegisterModal">
+        <div class="hextech-modal large-modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-shield-halved"></i> Registrar Partida de Equipo en el Tracker</h3>
+                <button class="close-modal-btn" onclick="closeMatchRegisterModal()">&times;</button>
+            </div>
+
+            <form id="matchRegisterForm" onsubmit="handleSaveMatchSubmit(event)">
+                <div class="modal-body-content">
+                    <!-- General Game Info Bar -->
+                    <div class="match-outcome-selector">
+                        <label class="outcome-label">Resultado:</label>
+                        <div class="outcome-btn-group">
+                            <label class="outcome-pill victory-pill">
+                                <input type="radio" name="matchResult" value="VICTORY" checked>
+                                <span><i class="fa-solid fa-trophy"></i> VICTORIA</span>
+                            </label>
+                            <label class="outcome-pill defeat-pill">
+                                <input type="radio" name="matchResult" value="DEFEAT">
+                                <span><i class="fa-solid fa-skull"></i> DERROTA</span>
+                            </label>
+                        </div>
+
+                        <div class="duration-box">
+                            <label for="matchDurationInput"><i class="fa-solid fa-clock"></i> Duración:</label>
+                            <input type="text" id="matchDurationInput" value="28 min" placeholder="Ej: 25 min">
+                        </div>
+                    </div>
+
+                    <!-- 5 Players Performance Inputs Table -->
+                    <div class="players-input-section">
+                        <h4><i class="fa-solid fa-users"></i> Desempeño Individual de los 5 Invocadores</h4>
+                        <div class="players-input-grid" id="registerMatchPlayersGrid">
+                            <!-- Injected dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Match Notes / Learning Section -->
+                    <div class="match-notes-section">
+                        <label for="matchNotesInput">
+                            <i class="fa-solid fa-lightbulb"></i> Observaciones de Equipo / Puntos a Mejorar:
+                        </label>
+                        <textarea id="matchNotesInput" rows="3" placeholder="Ej: Buen control de Dragón. Falta visión en Baron al minuto 25. Riven e Invocador 3 coordinaron muy bien en TF..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-actions-bar">
+                    <button type="button" class="hextech-btn secondary" onclick="closeMatchRegisterModal()">Cancelar</button>
+                    <button type="submit" class="hextech-btn primary large-glow">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Partida y Sincronizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         MODAL 2: SELECTOR DE CAMPEÓN
+         ======================================================== -->
     <div class="modal-backdrop" id="champPickerModal">
         <div class="hextech-modal">
             <div class="modal-header">
