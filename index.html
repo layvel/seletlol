@@ -184,7 +184,7 @@
             <div class="analytics-grid">
                 <!-- Left Column: Individual Player Stats -->
                 <div class="analytics-card wide-card">
-                    <h3><i class="fa-solid fa-users"></i> Rendimiento por Invocador</h3>
+                    <h3><i class="fa-solid fa-users"></i> Rendimiento por Invocador (Plantilla)</h3>
                     <div class="table-responsive">
                         <table class="hextech-table">
                             <thead>
@@ -213,6 +213,15 @@
                 </div>
             </div>
 
+            <!-- Duo Synergy Matrix Card -->
+            <div class="analytics-card full-card" style="margin-bottom: 1.5rem;">
+                <h3><i class="fa-solid fa-people-group"></i> Matriz de Sinergia entre Amigos (Dúos / Tríos)</h3>
+                <p class="subtitle-hint">Métricas de rendimiento cuando 2 o más amigos específicos juegan en el mismo equipo.</p>
+                <div class="synergy-grid" id="synergyMatrixContainer">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
             <!-- Team Improvement Notes Feed -->
             <div class="analytics-card full-card">
                 <h3><i class="fa-solid fa-lightbulb"></i> Cuaderno de Aprendizaje & Consejos del Equipo</h3>
@@ -223,21 +232,25 @@
             </div>
         </section>
 
-        <!-- STEP 1: SUMMONER LANE SELECTION -->
+        <!-- STEP 1: SUMMONER LANE SELECTION (DYNAMIC ROSTER 5-7+) -->
         <section class="step-content" id="step1Content">
             <div class="section-intro">
-                <h2><i class="fa-solid fa-users"></i> Configuración del Equipo de Invocadores</h2>
-                <p>Escribe los nombres de los 5 invocadores y sus líneas o usa la aleatoriedad rápida para generar las 3 partidas al instante.</p>
+                <h2><i class="fa-solid fa-users-gear"></i> Configuración de Plantilla de Invocadores (5 a 7 Jugadores)</h2>
+                <p>Registra a todos tus amigos del grupo, sus líneas de preferencia y los campeones que quieren jugar en cada rol.</p>
             </div>
 
-            <!-- Quick Random Draft Hero Banner -->
-            <div class="quick-random-hero-card">
-                <div class="hero-text">
-                    <h3><i class="fa-solid fa-dice"></i> Modo Rápido 100% Aleatorio</h3>
-                    <p>Escribe los nombres de los invocadores abajo y haz clic aquí para asignar líneas y campeones aleatorios al instante e ir directo al <strong>Modo Revelación Misteriosa</strong>.</p>
+            <!-- Roster Controls Bar -->
+            <div class="tracker-action-bar" style="margin-bottom: 1rem;">
+                <div style="display: flex; gap: 0.8rem;">
+                    <button class="hextech-btn primary glow-button" onclick="addNewSummonerToRoster()">
+                        <i class="fa-solid fa-user-plus"></i> + Agregar Invocador a Plantilla
+                    </button>
+                    <button class="hextech-btn secondary" onclick="presetStandardTeam()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Autocompletar Líneas Equilibradas
+                    </button>
                 </div>
-                <button class="hextech-btn primary large-glow" onclick="executeQuickRandomDraft()">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> ¡Generar 3 Partidas Aleatorias!
+                <button class="hextech-btn primary large-glow" onclick="saveRosterConfig()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> 💾 Guardar Plantilla en la Nube
                 </button>
             </div>
 

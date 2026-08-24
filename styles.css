@@ -2088,3 +2088,80 @@ body.hextech-theme {
     box-shadow: 0 0 10px rgba(10, 200, 185, 0.4);
 }
 
+/* Synergy Matrix Grid Styles */
+.synergy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.synergy-card {
+    background: rgba(1, 10, 19, 0.7);
+    border: 1px solid var(--gold-dark);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.synergy-card.best-duo {
+    border-color: #1dd1a1;
+    background: linear-gradient(135deg, rgba(9, 20, 40, 0.9), rgba(29, 209, 161, 0.15));
+    box-shadow: 0 0 15px rgba(29, 209, 161, 0.3);
+}
+
+.synergy-best-tag {
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    background: #1dd1a1;
+    color: #010a13;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.synergy-duo-names {
+    font-family: var(--font-heading);
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.synergy-stats-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.synergy-wr-val {
+    font-weight: 800;
+    color: var(--cyan-hextech);
+}
+
+.delete-summoner-btn {
+    background: rgba(255, 71, 87, 0.15);
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-summoner-btn:hover {
+    background: #ff4757;
+    color: #ffffff;
+}
+
+

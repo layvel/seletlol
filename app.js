@@ -340,9 +340,10 @@ async function loadRiotDataDragon() {
     }
 }
 
-// STEP 1: RENDER SUMMONERS & MANUAL LINES SELECTION
+// STEP 1: RENDER SUMMONERS & MANUAL LINES SELECTION (DYNAMIC 5-7+ ROSTER)
 function renderSummonersGrid() {
     const grid = document.getElementById('summonersGrid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     state.summoners.forEach(sum => {
@@ -367,19 +368,26 @@ function renderSummonersGrid() {
             `;
         }).join('');
 
+        const deleteBtnHTML = state.summoners.length > 2 ? `
+            <button class="delete-summoner-btn" onclick="deleteSummonerFromRoster(${sum.id})" title="Eliminar invocador">
+                <i class="fa-solid fa-user-minus"></i> Eliminar
+            </button>
+        ` : '';
+
         card.innerHTML = `
             <div class="summoner-card-header">
                 <div class="summoner-avatar-box">
                     <img src="${iconUrl}" class="summoner-avatar-img" alt="Avatar Invocador">
                     <div class="summoner-name-wrapper">
                         <input type="text" class="summoner-name-input" value="${escapeHtml(sum.name)}" 
-                               placeholder="Nombre de Invocador (ej: Layvel)"
+                               placeholder="Nombre de Invocador (ej: Layvel#LAS)"
                                onchange="updateSummonerName(${sum.id}, this.value)">
                         <button class="riot-search-btn" onclick="searchRiotSummoner(${sum.id})">
                             <i class="fa-solid fa-satellite-dish"></i> ${sum.verified ? `Niv. ${sum.level || 1124} Verificado` : 'Conectar API Riot'}
                         </button>
                     </div>
                 </div>
+                ${deleteBtnHTML}
             </div>
             <div class="lanes-selector-title">Preferencias (${sum.preferredLanes.length}/3 Líneas)</div>
             <div class="lanes-options-group">
@@ -390,11 +398,52 @@ function renderSummonersGrid() {
     });
 }
 
+function addNewSummonerToRoster() {
+    const nextNum = state.summoners.length + 1;
+    const newSum = {
+        id: Date.now(),
+        name: `Invocador ${nextNum}`,
+        profileIconId: 7117 + (nextNum * 3),
+        level: 300,
+        verified: false,
+        preferredLanes: ['MID', 'TOP'],
+        mainChamps: ['Ahri', 'Yasuo'],
+        pools: {}
+    };
+    state.summoners.push(newSum);
+    renderSummonersGrid();
+    saveRosterConfig();
+}
+
+function deleteSummonerFromRoster(summonerId) {
+    if (state.summoners.length <= 2) {
+        alert('Se requieren al menos 2 invocadores en la plantilla.');
+        return;
+    }
+    if (!confirm('¿Eliminar a este invocador de la plantilla?')) return;
+    state.summoners = state.summoners.filter(s => s.id !== summonerId);
+    renderSummonersGrid();
+    saveRosterConfig();
+}
+
+function saveRosterConfig() {
+    localStorage.setItem('LOL_TEAM_SUMMONERS_ROSTER', JSON.stringify(state.summoners));
+    try {
+        fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'SAVE_ROSTER', summoners: state.summoners })
+        });
+    } catch(e) {}
+    updateCloudStatusBadge('online', '🟢 Plantilla Guardada');
+}
+
 function updateSummonerName(summonerId, newName) {
     const sum = state.summoners.find(s => s.id === summonerId);
     if (sum) {
         sum.name = newName.trim() || `Invocador ${summonerId}`;
         renderSummonerChampTabs();
+        saveRosterConfig();
     }
 }
 
@@ -417,6 +466,7 @@ function toggleSummonerLane(summonerId, laneId, isChecked) {
 
     renderSummonersGrid();
     validateLineCoverage();
+    saveRosterConfig();
 }
 
 function resetAllLanes() {
@@ -762,7 +812,7 @@ function filterHistoryResult(res) {
 }
 
 /* ===================================================
-   REGISTER MATCH MODAL HANDLING
+   REGISTER MATCH MODAL HANDLING (DYNAMIC 2 TO 5+ PARTICIPANTS)
    =================================================== */
 
 function openRegisterMatchModal() {
@@ -773,13 +823,17 @@ function openRegisterMatchModal() {
     const defaultLanes = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
 
     state.summoners.forEach((s, i) => {
-        const laneId = s.preferredLanes[0] || defaultLanes[i] || 'MID';
+        const isCheckedDefault = i < 5;
+        const laneId = s.preferredLanes[0] || defaultLanes[i % 5] || 'MID';
         const row = document.createElement('div');
         row.className = 'player-input-row';
+        row.style.opacity = isCheckedDefault ? '1' : '0.4';
         row.innerHTML = `
             <div class="player-name-badge">
+                <input type="checkbox" class="player-active-checkbox" name="playerActive_${i}" ${isCheckedDefault ? 'checked' : ''} onchange="this.closest('.player-input-row').style.opacity = this.checked ? '1' : '0.4'">
                 <i class="fa-solid fa-user-shield"></i>
-                <input type="text" class="select-champ-input" name="playerSummonerName_${i}" value="${escapeHtml(s.name)}" style="width: 100px;">
+                <span style="font-weight:700;">${escapeHtml(s.name)}</span>
+                <input type="hidden" name="playerSummonerName_${i}" value="${escapeHtml(s.name)}">
             </div>
             <select class="select-line-input" name="playerLane_${i}">
                 <option value="TOP" ${laneId === 'TOP' ? 'selected' : ''}>Top</option>
@@ -788,7 +842,7 @@ function openRegisterMatchModal() {
                 <option value="BOT" ${laneId === 'BOT' ? 'selected' : ''}>Bot / ADC</option>
                 <option value="SUPPORT" ${laneId === 'SUPPORT' ? 'selected' : ''}>Soporte</option>
             </select>
-            <input type="text" class="select-champ-input" name="playerChampion_${i}" placeholder="Campeón (ej: Ahri, Riven...)" value="${s.mainChamps?.[0] || 'Ahri'}">
+            <input type="text" class="select-champ-input" name="playerChampion_${i}" placeholder="Campeón" value="${s.mainChamps?.[0] || 'Ahri'}">
             <div class="kda-input-group">
                 <input type="number" name="playerKills_${i}" value="5" min="0">
                 <span class="kda-slash">/</span>
@@ -816,22 +870,30 @@ function handleSaveMatchSubmit(e) {
     const notes = document.getElementById('matchNotesInput')?.value || '';
 
     const players = [];
-    for (let i = 0; i < 5; i++) {
-        const sumName = form.querySelector(`input[name="playerSummonerName_${i}"]`)?.value || `Invocador ${i+1}`;
-        const lane = form.querySelector(`select[name="playerLane_${i}"]`)?.value || 'MID';
-        const champ = form.querySelector(`input[name="playerChampion_${i}"]`)?.value || 'Ahri';
-        const kills = parseInt(form.querySelector(`input[name="playerKills_${i}"]`)?.value || 0);
-        const deaths = parseInt(form.querySelector(`input[name="playerDeaths_${i}"]`)?.value || 0);
-        const assists = parseInt(form.querySelector(`input[name="playerAssists_${i}"]`)?.value || 0);
+    state.summoners.forEach((s, i) => {
+        const isActive = form.querySelector(`input[name="playerActive_${i}"]`)?.checked;
+        if (isActive) {
+            const sumName = form.querySelector(`input[name="playerSummonerName_${i}"]`)?.value || s.name;
+            const lane = form.querySelector(`select[name="playerLane_${i}"]`)?.value || 'MID';
+            const champ = form.querySelector(`input[name="playerChampion_${i}"]`)?.value || 'Ahri';
+            const kills = parseInt(form.querySelector(`input[name="playerKills_${i}"]`)?.value || 0);
+            const deaths = parseInt(form.querySelector(`input[name="playerDeaths_${i}"]`)?.value || 0);
+            const assists = parseInt(form.querySelector(`input[name="playerAssists_${i}"]`)?.value || 0);
 
-        players.push({
-            summonerName: sumName,
-            lane: lane,
-            champion: champ,
-            kills: kills,
-            deaths: deaths,
-            assists: assists
-        });
+            players.push({
+                summonerName: sumName,
+                lane: lane,
+                champion: champ,
+                kills: kills,
+                deaths: deaths,
+                assists: assists
+            });
+        }
+    });
+
+    if (players.length < 2) {
+        alert('Debes seleccionar al menos 2 invocadores participantes para esta partida.');
+        return;
     }
 
     const newMatch = {
@@ -849,7 +911,7 @@ function handleSaveMatchSubmit(e) {
 }
 
 /* ===================================================
-   ANALYTICS DASHBOARD ENGINE
+   ANALYTICS DASHBOARD ENGINE & DUO SYNERGY MATRIX
    =================================================== */
 
 function renderAnalyticsDashboard() {
@@ -917,7 +979,10 @@ function renderAnalyticsDashboard() {
         `;
     }).join('');
 
-    // 2. Calculate lane winrates
+    // 2. Render Duo Synergy Matrix
+    renderSynergyMatrix();
+
+    // 3. Calculate lane winrates
     const laneStats = {
         TOP: { games: 0, wins: 0 },
         JUNGLE: { games: 0, wins: 0 },
@@ -975,6 +1040,73 @@ function renderAnalyticsDashboard() {
             `;
         }).join('');
     }
+}
+
+function renderSynergyMatrix() {
+    const container = document.getElementById('synergyMatrixContainer');
+    if (!container) return;
+
+    const duoStats = {};
+
+    state.matchesHistory.forEach(m => {
+        const isWin = m.result === 'VICTORY';
+        const participantNames = m.players.map(p => (p.summonerName || '').trim().toLowerCase()).filter(Boolean);
+
+        for (let i = 0; i < participantNames.length; i++) {
+            for (let j = i + 1; j < participantNames.length; j++) {
+                const p1 = participantNames[i];
+                const p2 = participantNames[j];
+                const key = [p1, p2].sort().join('___');
+
+                if (!duoStats[key]) {
+                    const name1 = m.players.find(p => p.summonerName.toLowerCase() === p1)?.summonerName || p1;
+                    const name2 = m.players.find(p => p.summonerName.toLowerCase() === p2)?.summonerName || p2;
+                    duoStats[key] = { name1, name2, games: 0, wins: 0 };
+                }
+
+                duoStats[key].games++;
+                if (isWin) duoStats[key].wins++;
+            }
+        }
+    });
+
+    const duosArray = Object.values(duoStats);
+    if (duosArray.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-secondary); font-style: italic;">Registra partidas con 2 o más amigos para calcular automáticamente la matriz de sinergias.</p>`;
+        return;
+    }
+
+    let bestDuoKey = null;
+    let maxWR = -1;
+    duosArray.forEach(d => {
+        const wr = d.games > 0 ? (d.wins / d.games) : 0;
+        if (d.games >= 2 && wr > maxWR) {
+            maxWR = wr;
+            bestDuoKey = `${d.name1.toLowerCase()}___${d.name2.toLowerCase()}`;
+        }
+    });
+
+    container.innerHTML = duosArray.map(d => {
+        const wr = d.games > 0 ? Math.round((d.wins / d.games) * 100) : 0;
+        const currentKey = [d.name1.toLowerCase(), d.name2.toLowerCase()].sort().join('___');
+        const isBest = currentKey === bestDuoKey;
+
+        return `
+            <div class="synergy-card ${isBest ? 'best-duo' : ''}">
+                ${isBest ? '<span class="synergy-best-tag"><i class="fa-solid fa-crown"></i> Mejor Dupla</span>' : ''}
+                <div class="synergy-duo-names">
+                    <i class="fa-solid fa-handshake" style="color: var(--gold-primary)"></i> ${escapeHtml(d.name1)} + ${escapeHtml(d.name2)}
+                </div>
+                <div class="synergy-stats-line">
+                    <span>Partidas Juntas: <strong>${d.games}</strong></span>
+                    <span class="synergy-wr-val">${wr}% (${d.wins}V/${d.games - d.wins}D)</span>
+                </div>
+                <div class="winrate-bar-container" style="height: 6px; margin-top: 0.3rem;">
+                    <div class="winrate-bar-fill ${wr >= 60 ? 'high-wr' : ''}" style="width: ${wr}%;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 /* ===================================================
